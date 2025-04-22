@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react'
+import InputForm from './components/GUI/InputForm'
+import OptionsList from './components/GUI/OptionsList'
+import VisualizationOptions from './components/GUI/VisualizationOptions'
+import ThreeDView from './components/ThreeDView'
 
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+    <div style={{ display: 'flex', height: '100vh' }}>
+      <div
+        className='sidebar'      
+      >
+        <InputForm />
+        <VisualizationOptions /> {/* <-- Add new component here */}
 
-export default App;
+        <OptionsList />
+      </div>
+      <div style={{ flex: 1 }}>
+        <ThreeDView />
+      </div>
+    </div>
+  )
+}
