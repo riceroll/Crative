@@ -13,10 +13,7 @@ export async function preloadModels() {
   // Helper to load one OBJ+MTL pair and preprocess it
   function loadObjModel(name) {
     return new Promise((resolve, reject) => {
-      mtlLoader.load(
-        `./models/${name}.mtl`,
-        materials => {
-          materials.preload()
+  
           // objLoader.setMaterials(materials)
           objLoader.load(
             `./models/${name}.obj`,
@@ -48,10 +45,7 @@ export async function preloadModels() {
             undefined,
             err => reject(err)
           )
-        },
-        undefined,
-        err => reject(err)
-      )
+        
     })
   }
 
