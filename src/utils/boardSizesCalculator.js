@@ -1,9 +1,5 @@
-// Define the board sizes and gap (you can later replace these with values from window.global.boardSizes if preferred)
-const sizeLarge    = 40;
-const sizeMedium   = 24;
-const sizeSmall    = 5;
-const gap          = 1.5;
-const thickness   = 1.5;
+import { all } from 'three/tsl';
+import { sizeLarge, sizeMedium, sizeSmall, gap, thickness } from '../configs/boardConfig';
 
 /**
  * Calculate the total size of a board array including gaps.
@@ -21,6 +17,7 @@ function getTotalSize(boards) {
  * number of small boards.
  */
 function generateCandidateForDimension(D, useMedium = false, smallCount = 0) {
+  D = D + 1e-6;
   let boards = [];
   
   // Greedily add large boards while it does not exceed D.
@@ -62,11 +59,39 @@ function generateCandidateForDimension(D, useMedium = false, smallCount = 0) {
  */
 function generateCandidatesForDimension(D) {
   const candidates = [];
-  for (let useMedium of [false, true]) {
-    for (let smallCount = 0; smallCount <= 7; smallCount++) {
-      candidates.push( generateCandidateForDimension(D, useMedium, smallCount) );
-    }
+  
+  // keep adding sizeLarge boards right before exceeding D
+  let basicLargeBoards = [];
+  while (getTotalSize(basicLargeBoards) + sizeLarge <= D) {
+    basicLargeBoards.push(sizeLarge);
   }
+
+  // 1. pure large, copy the boards array to a new array and append one sizeLarge board
+  let boards = [...basicLargeBoards];
+  boards.push(sizeLarge);
+  candidates.push(boards);
+  
+  // 2. one sizeMedium board, copy the boards array to a new array and append one sizeMedium board
+  boards = [...basicLargeBoards];
+  boards.push(sizeMedium);
+
+  // keep adding sizeSmall boards until the total exceeds D
+  let numSmallBoards = 0;
+  while (getTotalSize(boards) <= D && numSmallBoards < 7) {
+    boards.push(sizeSmall);
+    numSmallBoards++;
+  }
+  candidates.push(boards);
+
+  // 3. keep adding sizeSmall boards until the total exceeds D
+  boards = [...basicLargeBoards];
+  numSmallBoards = 0;
+  while (getTotalSize(boards) <= D && numSmallBoards < 7) {
+    boards.push(sizeSmall);
+    numSmallBoards++;
+  }
+  candidates.push(boards);
+
   return candidates;
 }
 
@@ -89,11 +114,12 @@ export function calculateBoardSizes(innerDims) {
       for (let z of zCandidates) {
         // Count the occurrences of medium board in each candidate.
         let mediumCount = 0;
-        const countMedium = arr => arr.reduce((count, board) => board === sizeMedium ? count + 1 : count, 0);
-        mediumCount = countMedium(x) + countMedium(y) + countMedium(z);
+        mediumCount += x.includes(sizeMedium) ? 1 : 0;
+        mediumCount += y.includes(sizeMedium) ? 1 : 0;
+        mediumCount += z.includes(sizeMedium) ? 1 : 0;
         
         // Allow only combinations where exactly one dimension uses a medium board.
-        if (mediumCount === 1 || false) {
+        if ( mediumCount <= 1 ) {
           allCombinations.push({ x, y, z });
         }
       }

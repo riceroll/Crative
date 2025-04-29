@@ -2,6 +2,7 @@ import React from 'react'
 import InputForm from './components/GUI/InputForm'
 import OptionsList from './components/GUI/OptionsList'
 import VisualizationOptions from './components/GUI/VisualizationOptions'
+import ComponentList from './components/GUI/ComponentList'
 import ThreeDView from './components/ThreeDView'
 
 export default function App() {
@@ -11,9 +12,9 @@ export default function App() {
         className='sidebar'      
       >
         <InputForm />
-        <VisualizationOptions /> {/* <-- Add new component here */}
-
+        <VisualizationOptions /> 
         <OptionsList />
+        <ComponentList />
       </div>
       <div style={{ flex: 1 }}>
         <ThreeDView />

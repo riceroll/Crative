@@ -1,6 +1,6 @@
 // Import necessary config values
 import { dFdx } from 'three/tsl';
-import { gap, defaultThickness, boardTypes } from '../configs/boardConfig';
+import { gap, thickness, boardTypes } from '../configs/boardConfig';
 
 // Helper function: lay out boards, now returning type information
 // Needs refinement based on how board types are determined from sizesA/sizesB
@@ -66,9 +66,9 @@ function computeBoards(sizesA, sizesB) {
 function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
 
   // adjust sizes with half thickness
-  const halfWidthWithOffset = halfWidth + defaultThickness / 2;
-  const halfHeightWithOffset = halfHeight + defaultThickness / 2;
-  const halfDepthWithOffset = halfDepth + defaultThickness / 2;
+  const halfWidthWithOffset = halfWidth + thickness / 2;
+  const halfHeightWithOffset = halfHeight + thickness / 2;
+  const halfDepthWithOffset = halfDepth + thickness / 2;
 
   // Calculate all 8 corner positions
   const cornerCubePositions = [
@@ -87,12 +87,12 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
   const cornerRotations = [
     [0, -Math.PI / 2, 0],  // Bottom-left front: point left
     [0, Math.PI / 2, 0],   // Bottom-right front: point right
-    [0, 0, 0],             // Top-right front: point upwards
-    [0, 0, 0],             // Top-left front: point upwards
+    [-Math.PI / 2, 0, 0],             // Top-right front: point upwards
+    [-Math.PI / 2, 0, 0],             // Top-left front: point upwards
     [0, -Math.PI / 2, 0],  // Bottom-left back: point left
     [0, Math.PI / 2, 0],   // Bottom-right back: point right
-    [0, 0, 0],             // Top-right back: point upwards
-    [0, 0, 0]              // Top-left back: point upwards
+    [-Math.PI / 2, 0, 0],             // Top-right back: point upwards
+    [-Math.PI / 2, 0, 0]              // Top-left back: point upwards
   ];
 
   // Calculate edge positions based on board sizes
@@ -121,10 +121,10 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
     const dir = vec.map(v => v / edgeLength);
 
     // shift start and end by half thickness
-    // start = start.map((v, i) => v + dir[i] * defaultThickness / 2);
-    // end = end.map((v, i) => v - dir[i] * defaultThickness / 2);
+    // start = start.map((v, i) => v + dir[i] * thickness / 2);
+    // end = end.map((v, i) => v - dir[i] * thickness / 2);
 
-    let accumulated = defaultThickness / 2;
+    let accumulated = thickness / 2;
     for (let i = 0; i < edgeBoardSizes.length - 1; i++) {
         // skip over board i
         accumulated += edgeBoardSizes[i];

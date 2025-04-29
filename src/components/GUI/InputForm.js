@@ -32,7 +32,7 @@ export default function InputForm() {
         className='input-form-grid'
       >
         <label className='input-form-label' htmlFor="width">
-          Width:
+          Width (cm):
         </label>
         <input
           className="number-input"
@@ -44,7 +44,7 @@ export default function InputForm() {
         />
 
         <label className='input-form-label' htmlFor="depth">
-          Depth:
+          Depth (cm):
         </label>
         <input
           className="number-input"
@@ -56,7 +56,7 @@ export default function InputForm() {
         />
 
         <label className='input-form-label' htmlFor="height">
-          Height:
+          Height (cm):
         </label>
         <input
           className="number-input"

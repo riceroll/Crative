@@ -7,7 +7,23 @@ export default function OptionCard({ option, selected, onSelect }) {
       onClick={onSelect}
       data-selected={selected}
     >
-      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>{option.label}</div>
+      <div style={{ marginBottom: '8px' }}>
+        {option.labels.map((label, index) => (
+          <div
+            key={index}
+            className={`option-label-${label}`}
+            style={{
+              display: 'inline-flex',
+              margin: '0 4px',
+              marginLeft: '0',
+              padding: '2px 4px'
+            }}
+          >
+            {label === 'Balanced' ? label : 'Min '}
+            {label === 'Balanced' ? '' : label}
+          </div>
+        ))}
+        </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', lineHeight: '1.6' }}>
         <div className='option-label'>Dead Space (m³):</div>
         <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
