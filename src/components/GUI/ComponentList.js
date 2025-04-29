@@ -66,7 +66,7 @@ export default function ComponentList() {
                 {components.map((item, index)=>(
                   <tr key={item.type} style={{borderTop: index === 0 ? '1px solid #ccc' : 'none'}}>
                     <td className="component-table-cell component-table-image-cell">
-                      <img src={`/images/${item.imageName}.png`} alt={item.name} className="component-image"/>
+                      <img src={`./images/${item.imageName}.png`} alt={item.name} className="component-image"/>
                       <span>{item.name}</span>
                     </td>
                     <td className="component-table-cell">{item.count}</td>
@@ -75,7 +75,7 @@ export default function ComponentList() {
                   </tr>
                 ))}
                 <tr className="total-row">
-                  <td className="component-table-cell" style={{fontWeight:'bold'}}>Total</td>
+                  <td className="component-table-cell" style={{fontWeight:'bold'}}>Grand Total:</td>
 
                   <td className="component-table-cell" style={{fontWeight:'bold'}}></td>
                   <td className="component-table-cell" style={{fontWeight:'bold'}}>{totalAllCost.toFixed(2)}</td>
