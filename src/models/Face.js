@@ -1,7 +1,9 @@
 import React, { useContext } from 'react';
 import Board from './Board';
+import Strip from './Strip'; // Import Strip component
 import Cube from './Cube';
 import { ModelContext } from '../store/ModelContext';
+import { assemblyDisplacement } from '../configs/globalConfigs';
 import * as THREE from 'three'; // Import THREE.js for matrix operations
 
 // Helper function to rotate a point around a center
@@ -39,49 +41,65 @@ function arePointsClose(point1, point2, epsilon = 0.1) {
   );
 }
 
-
-// Helper to determine which face owns a corner or edge
-function shouldFaceRenderCorner(faceName, cornerPos) {
-  // Define which face is responsible for which corners/edges
-  // based on the corner's position relative to the origin
+// Helper function to calculate the explosion axis for strips in this face
+function calculateExplosionAxis(stripsMap) {
+  // We need to find the direction along which strips are aligned (strip-to-strip direction)
+  // This is perpendicular to the board alignment within each strip
   
-  // For corners at [±X, ±Y, ±Z]:
-  // - front (+Z) face: handles corners where Z > 0 
-  // - right (+X) face: handles corners where Z <= 0 and X > 0
-  // - left (-X) face: handles corners where Z <= 0, X <= 0, and Y > 0
-  // - bottom (-Y) face: handles all remaining corners (Z <= 0, X <= 0, Y <= 0)
+  if (stripsMap.size < 2) {
+    // If there's only one strip, use default
+    return [0, 0, 1];
+  }
   
-  // This ensures each corner is rendered by exactly one face
+  // Get the positions of the first board from each strip to determine strip alignment
+  const stripPositions = [];
   
-  const [x, y, z] = cornerPos;
-  const epsilon = 0.1; // Small tolerance for floating point comparison
+  for (let [stripKey, boardsInStrip] of stripsMap) {
+    if (boardsInStrip.length > 0 && boardsInStrip[0].position) {
+      // Sort boards within strip by id_1 and take the first one
+      const sortedBoards = [...boardsInStrip].sort((a, b) => (a.id_1 || 0) - (b.id_1 || 0));
+      stripPositions.push({
+        stripKey,
+        position: sortedBoards[0].position
+      });
+    }
+  }
   
-  switch(faceName) {
-    case 'front':
-      return z > -epsilon; // Front face handles all corners with Z >= 0
-      
-    case 'right':
-      return z <= epsilon && x > -epsilon; // Right face handles corners with Z < 0 and X >= 0
-      
-    case 'left':
-      return z <= epsilon && x <= epsilon && y > -epsilon; // Left handles Z < 0, X < 0, Y >= 0
-      
-    case 'back':
-      return false; // Back doesn't render any corners (handled by others)
-      
-    case 'top':
-      return false; // Top doesn't render any corners (handled by others)
-      
-    case 'bottom':
-      return z <= epsilon && x <= epsilon && y <= epsilon; // Bottom handles remaining corners
-      
-    default:
-      return false;
+  if (stripPositions.length < 2) {
+    return [0, 0, 1];
+  }
+  
+  // Sort strips by their id_0 to get proper strip ordering
+  stripPositions.sort((a, b) => a.stripKey - b.stripKey);
+  
+  // Calculate the direction between strips (strip alignment direction)
+  const firstStripPos = stripPositions[0].position;
+  const lastStripPos = stripPositions[stripPositions.length - 1].position;
+  
+  const stripAlignmentVector = [
+    lastStripPos[0] - firstStripPos[0],
+    lastStripPos[1] - firstStripPos[1],
+    lastStripPos[2] - firstStripPos[2]
+  ];
+  
+  // Find the dominant axis of strip alignment
+  const absX = Math.abs(stripAlignmentVector[0]);
+  const absY = Math.abs(stripAlignmentVector[1]);
+  const absZ = Math.abs(stripAlignmentVector[2]);
+  
+  // The explosion axis should be along the strip alignment direction
+  // (strips move apart along the direction they're arranged in)
+  if (absX > absY && absX > absZ) {
+    return stripAlignmentVector[0] > 0 ? [1, 0, 0] : [-1, 0, 0];
+  } else if (absY > absX && absY > absZ) {
+    return stripAlignmentVector[1] > 0 ? [0, 1, 0] : [0, -1, 0];
+  } else {
+    return stripAlignmentVector[2] > 0 ? [0, 0, 1] : [0, 0, -1];
   }
 }
 
 
-export default function Face({ name, boards, position, rotation, thickness, ...props }) {
+export default function Face({ name, progress, boards, position, rotation, thickness, ...props }) {
   const models = useContext(ModelContext);
   
   // Early return if no boards
@@ -218,25 +236,121 @@ export default function Face({ name, boards, position, rotation, thickness, ...p
     }
   });
 
+
+  // calculate current position
+  let finalPos = position.slice();
+  let initialPos = finalPos.slice();
+
+
+  let assemblyDisplacementVector = new THREE.Vector3(
+    0,
+    0,
+    1
+  );
+
+  // Apply rotation to the displacement vector
+  const rotationMatrix = new THREE.Matrix4();
+  rotationMatrix.makeRotationFromEuler(new THREE.Euler(rotation[0], rotation[1], rotation[2], 'ZYX'));
+  assemblyDisplacementVector.applyMatrix4(rotationMatrix);
+
+  // Add the displacement to the initial position
+  initialPos[0] += assemblyDisplacementVector.x * assemblyDisplacement;
+  initialPos[1] += assemblyDisplacementVector.y * assemblyDisplacement;
+  initialPos[2] += assemblyDisplacementVector.z * assemblyDisplacement;
+
+  // get the current positon with progress
+
+  let stripProgress = progress <= 0.5? progress * 2 : 1.0;
+  let faceProgress = progress > 0.5? (progress - 0.5) * 2 : 0.0;
+
+  let currentPos = [0, 0, 0];
+  currentPos[0] = initialPos[0] + (finalPos[0] - initialPos[0]) * faceProgress;
+  currentPos[1] = initialPos[1] + (finalPos[1] - initialPos[1]) * faceProgress;
+  currentPos[2] = initialPos[2] + (finalPos[2] - initialPos[2]) * faceProgress;
   
+  // --- Process boards into strips ---
+  const stripsMap = new Map();
+  if (boards && Array.isArray(boards)) {
+    boards.forEach(board => {
+      const stripKey = board.id_0 !== undefined ? board.id_0 : 0;
+      if (!stripsMap.has(stripKey)) {
+        stripsMap.set(stripKey, []);
+      }
+      stripsMap.get(stripKey).push(board);
+    });
+  }
+
+  // --- Calculate explosion axis based on strip alignment ---
+  const faceExplosionAxis = calculateExplosionAxis(stripsMap);
+
+  console.log('Face Explosion Axis:', faceExplosionAxis);
+
+
+  const processedStrips = [];
+  // Sort strip keys to ensure consistent stripIndex if keys are numeric and represent order
+  const sortedStripKeys = Array.from(stripsMap.keys()).sort((a, b) => a - b);
+  const totalStripsOnFace = sortedStripKeys.length;
+
+  sortedStripKeys.forEach((stripKey, index) => {
+    const boardsInOriginalStrip = stripsMap.get(stripKey);
+    // Sort boards within the strip by id_1
+    boardsInOriginalStrip.sort((a, b) => (a.id_1 || 0) - (b.id_1 || 0));
+
+    let stripFinalPosition = [0, 0, 0];
+    if (boardsInOriginalStrip.length > 0 && boardsInOriginalStrip[0].position) {
+      stripFinalPosition = boardsInOriginalStrip[0].position.slice();
+    }
+    
+    const stripOwnRotation = [0, 0, 0]; 
+
+    const boardsForThisStrip = boardsInOriginalStrip.map(board => {
+      const boardGlobalPos = board.position || [0,0,0];
+      const relativePos = [
+        boardGlobalPos[0] - stripFinalPosition[0],
+        boardGlobalPos[1] - stripFinalPosition[1],
+        boardGlobalPos[2] - stripFinalPosition[2],
+      ];
+      return {
+        ...board,
+        position: relativePos,
+      };
+    });
+
+
+    processedStrips.push({
+      id: stripKey, // Keep original ID for keying if needed
+      stripIndex: index, // Sequential index for animation order
+      totalStrips: totalStripsOnFace,
+      boardsInStrip: boardsForThisStrip,
+      position: stripFinalPosition,
+      rotation: stripOwnRotation,
+    });
+  });
+  // --- End of strip processing ---
+
   return (
-    <group position={position} rotation={rotation} {...props}>
-      {/* Render all boards */}
-      {boards.map((board, index) => (
-        <Board
-          key={`${name}-board-${index}`}
-          type={board.type}
-          position={board.position}
-          rotation={board.rotation || [0, 0, 0]}
+    <group position={currentPos} rotation={rotation} {...props}>
+      {/* Render Strips */}
+      {processedStrips.map((stripData) => (
+        <Strip
+          key={`${name}-strip-${stripData.id}`} // Use original id for key
+          name={`${name}-strip-${stripData.id}`}
+          progress={stripProgress}                 // Pass Face's progress down
+          stripIndex={stripData.stripIndex}   // NEW: Index of this strip
+          totalStrips={stripData.totalStrips} // NEW: Total strips in this face
+          explosionAxis={faceExplosionAxis}   // NEW: Direction for initial displacement
+          boardsInStrip={stripData.boardsInStrip}
+          position={stripData.position}       // Strip's final position relative to this Face group
+          rotation={stripData.rotation}       // Strip's final rotation relative to this Face group
         />
       ))}
       
-      {/* Render cubes at corners */}
+      {/* Render cubes at corners (remains unchanged) */}
       {cornersToRender.map((corner, index) => (
         <Cube
           key={`${name}-corner-${index}`}
           position={corner.localPos}
-          rotation={[0, 0, 0]}
+          rotation={[0, 0, 0]} // Assuming cubes don't have specific rotation from this logic
         />
       ))}
     </group>

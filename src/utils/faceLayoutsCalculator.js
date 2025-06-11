@@ -46,6 +46,8 @@ function computeBoards(sizesA, sizesB) {
                   currentOffsetB + halfSizeB - (sizesB.reduce((a, b) => a + b, 0) + gap * (sizesB.length - 1)) / 2,
                   0 // Z is 0 relative to the face plane.
                 ],
+                id_0: i,
+                id_1: j,
                 width: finalSizeA,
                 height: finalSizeB,
                 rotation: boardRotation // Apply rotation if dimensions were swapped.

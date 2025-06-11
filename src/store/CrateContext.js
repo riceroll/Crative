@@ -9,6 +9,7 @@ export function CrateProvider({ children }) {
   const [candidateCrates, setCandidateCrates] = useState([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);
   const [visualizeBoardTypes, setVisualizeBoardTypes] = useState(false); // <-- New state
+  const [assemblyProgress, setAssemblyProgress] = useState(1.0);
 
   // Recompute candidate crates whenever innerDims change
   useEffect(() => {
@@ -35,7 +36,9 @@ export function CrateProvider({ children }) {
         setSelectedCandidateId,
         selectedCandidate,
         visualizeBoardTypes, // <-- Expose state
-        toggleVisualizeBoardTypes // <-- Expose toggle function
+        toggleVisualizeBoardTypes, // <-- Expose toggle function
+        assemblyProgress,
+        setAssemblyProgress
       }}
     >
       {children}

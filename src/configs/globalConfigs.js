@@ -7,3 +7,7 @@ export const colors = [
     '#6BB7C2',
     '#8FA6CA'
 ];
+
+export const defaultColor = '#555'; // Default color for boards
+
+export const assemblyDisplacement = 50;

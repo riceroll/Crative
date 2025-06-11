@@ -350,3 +350,50 @@
     display: table-cell !important;
   }
 }
+
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.progress-slider {
+  flex: 0.9; /* Takes 90% of the available space */
+  height: 6px;
+  margin-right: 10px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #4a80f5;
+  cursor: pointer;
+}
+
+.progress-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #4a80f5;
+  cursor: pointer;
+  border: none;
+}
+
+.slider-value {
+  flex: 0.1; /* Takes 10% of the available space */
+  text-align: right;
+  font-weight: 500;
+  min-width: 40px; /* Ensures the percentage always has enough space */
+  font-size: 14px;
+}
+

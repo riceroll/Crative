@@ -14,8 +14,6 @@ const getBoardImageName = (boardType) => {
   return boardType; // Fallback or handle other cases if needed
 };
 
-
-
 export default function ComponentList() {
   const { selectedCandidate } = useContext(CrateContext);
   const componentRef = useRef();
