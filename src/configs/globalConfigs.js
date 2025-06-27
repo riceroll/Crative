@@ -11,3 +11,5 @@ export const colors = [
 export const defaultColor = '#555'; // Default color for boards
 
 export const assemblyDisplacement = 50;
+
+export const assemblyDisplacementCube = assemblyDisplacement * 0.15; // Smaller displacement for cubes

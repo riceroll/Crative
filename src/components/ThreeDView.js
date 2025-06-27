@@ -10,9 +10,7 @@ import { gap } from '../configs/boardConfig'
 export default function ThreeDView() {
   const models = useContext(ModelContext)
   // Use innerDims and selectedCandidate from CrateContext
-  const { innerDims, selectedCandidate } = useContext(CrateContext)
-
-  const layouts = selectedCandidate?.faceLayouts;
+  const { innerDims, selectedCandidate } = useContext(CrateContext);
 
   if (!models) return null // Keep this check for models
 
@@ -30,13 +28,13 @@ export default function ThreeDView() {
         minDistance={5}
         maxDistance={500}
         enableDamping={true}
-        dampingFactor={0.2}
+        dampingFactor={1}
         rotateSpeed={0.5}
       />
       {/* Pass the extracted layouts to the Crate */}
       <Crate
         thickness={gap} 
-        faceLayouts={layouts} // Pass the extracted layouts variable
+        faceLayouts={selectedCandidate?.faceLayouts} // Pass the extracted layouts variable
         cubeLayouts={selectedCandidate?.cubeLayouts}
         scale={[0.1, 0.1, 0.1]}
         position={[0, 0, 0]}

@@ -1,6 +1,7 @@
 // Import necessary config values
-import { dFdx } from 'three/tsl';
+import { dFdx, directPointLight } from 'three/tsl';
 import { gap, thickness, boardTypes } from '../configs/boardConfig';
+import { assemblyDisplacementCube } from '../configs/globalConfigs';
 
 // Helper function: lay out boards, now returning type information
 // Needs refinement based on how board types are determined from sizesA/sizesB
@@ -86,6 +87,7 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
       [-halfWidthWithOffset,  halfHeightWithOffset, -halfDepthWithOffset]  // Top-left
   ];
 
+
   const cornerRotations = [
     [0, -Math.PI / 2, 0],  // Bottom-left front: point left
     [0, Math.PI / 2, 0],   // Bottom-right front: point right
@@ -96,6 +98,21 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
     [-Math.PI / 2, 0, 0],             // Top-right back: point upwards
     [-Math.PI / 2, 0, 0]              // Top-left back: point upwards
   ];
+
+
+  const cornerCubeInitPositions = cornerCubePositions.map(pos => [...pos]);
+
+  cornerCubeInitPositions[0][0] -= assemblyDisplacementCube; // Bottom-left front: point left
+  cornerCubeInitPositions[1][0] += assemblyDisplacementCube; // Bottom-right front: point right
+  cornerCubeInitPositions[2][1] += assemblyDisplacementCube; // Top-right front: point upwards
+  cornerCubeInitPositions[3][1] += assemblyDisplacementCube; // Top-left front: point upwards
+  cornerCubeInitPositions[4][0] -= assemblyDisplacementCube; // Bottom-left back: point left
+  cornerCubeInitPositions[5][0] += assemblyDisplacementCube; // Bottom-right back: point right
+  cornerCubeInitPositions[6][1] += assemblyDisplacementCube; // Top-right back: point upwards
+  cornerCubeInitPositions[7][1] += assemblyDisplacementCube; // Top-left back: point upwards
+
+
+  // --- Corrected Helper ---
 
   // Calculate edge positions based on board sizes
   const edgeConfigs = [];
@@ -141,21 +158,33 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
           start[2] + dir[2] * (edgeLength * t)
         ];
         
-        let rotation = [0, 0, 0];
+        let direction = [0, 0, 0];
 
-        const absPos = pos.map(Math.abs);
-        const maxAxis = absPos.indexOf(Math.max(...absPos));
-        if (maxAxis === 0) {
-          rotation = [0, pos[0] > 0 ? Math.PI / 2 : -Math.PI / 2, 0];
-        } else if (maxAxis === 1) {
-          rotation = [pos[1] > 0 ? -Math.PI / 2 : Math.PI / 2, 0, 0];
-        } else {
-          rotation = [0, pos[2] > 0 ? 0 : Math.PI, 0];
+        let rotation = [0, 0, 0];
+        
+        // Calculate direction based on rotation
+        if ( (Math.abs(dir[0]) < epsilon) && (start[0] > epsilon) ) { // direction along Z, on the X positive side
+
+          direction = [1, 0, 0];
+          rotation = [0, Math.PI / 2, 0];
+        } else if ( (Math.abs(dir[0]) < epsilon) && (start[0] < epsilon) ) { // direction along Z, on the X negative side
+          direction = [-1, 0, 0];
+          rotation = [0, -Math.PI / 2, 0];
+        } else if ( (Math.abs(dir[2]) < epsilon) && (start[2] > epsilon) ) { // direction along X, on the Z positive side
+          direction = [0, 0, 1];
+          rotation = [0, 0, 0];
+        } else if ( (Math.abs(dir[2]) < epsilon) && (start[2] < epsilon) ) { // direction along X, on the Z negative side
+          direction = [0, 0, -1];
+          rotation = [Math.PI, 0, 0];
         }
 
+        let initPos = pos.map((v, i) => v + direction[i] * assemblyDisplacementCube);
+
         configs.push({
-          position: pos,
-          rotation: rotation
+          final_position: pos,
+          final_rotation: rotation,
+          initial_position: initPos,
+          initial_rotation: rotation,
         })
 
         // skip over the gap
@@ -194,13 +223,17 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
 
   // Map positions to cube objects (still using default rotation)
   const cornerCubes = cornerCubePositions.map((position, index) => ({
-    position,
-    rotation: cornerRotations[index]
+    final_position: position,
+    final_rotation: cornerRotations[index],
+    initial_position: cornerCubeInitPositions[index],
+    initial_rotation: cornerRotations[index]
   }));
   
   const edgeCubes = edgeConfigs.map((config, index) => ({
-    position: config.position,
-    rotation: config.rotation
+    final_position: config.final_position,
+    final_rotation: config.final_rotation,
+    initial_position: config.initial_position,
+    initial_rotation: config.initial_rotation,
   }));
 
   return { cornerCubes, edgeCubes };
@@ -208,6 +241,7 @@ function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
 
 // Main function
 export function calculateFaceLayouts(boardSizes) {
+
   // Calculate overall dimensions based on boardSizes and gap
   const width = boardSizes.x.reduce((acc, size) => acc + size, 0) + (boardSizes.x.length > 1 ? gap * (boardSizes.x.length - 1) : 0);
   const height = boardSizes.y.reduce((acc, size) => acc + size, 0) + (boardSizes.y.length > 1 ? gap * (boardSizes.y.length - 1) : 0);
@@ -218,23 +252,74 @@ export function calculateFaceLayouts(boardSizes) {
   const halfH = height / 2;
   const halfD = depth / 2;
 
+  // Calculate assembly displacement based on the largest dimension
+  let assemblyDisplacementAdjusted = Math.max(halfD, halfH, halfW) * 1.0 + 50;
+
   // Define positions relative to the crate origin (0,0,0)
   const frontPos = [0, 0, halfD];
+  const frontRot = [0, 0, 0];
+  const frontInitialPos = [0, 0, halfD + assemblyDisplacementAdjusted];
+  const frontFlatPos = [0, -halfH, halfD + assemblyDisplacementAdjusted];
+  const frontFlatRot = [-Math.PI / 2, 0, 0];
+
   const backPos = [0, 0, -halfD];
+  const backRot = [0, Math.PI, 0];
+  const backInitialPos = [0, 0, -halfD - assemblyDisplacementAdjusted];
+  const backFlatPos = [0, -halfH, -halfD - assemblyDisplacementAdjusted];
+  const backFlatRot = [Math.PI / 2, Math.PI, 0];
+
   const leftPos = [-halfW, 0, 0];
+  const leftRot = [-Math.PI/2 , -Math.PI / 2, -Math.PI / 2];
+  const leftInitialPos = [-halfW - assemblyDisplacementAdjusted, 0, 0];
+  const leftFlatPos = [-halfW - assemblyDisplacementAdjusted, -halfH, 0];
+  const leftFlatRot = [-Math.PI/2 , 0, -Math.PI / 2];
+
   const rightPos = [halfW, 0, 0];
+  const rightRot = [-Math.PI / 2, Math.PI / 2, Math.PI / 2];
+  const rightInitialPos = [halfW + assemblyDisplacementAdjusted, 0, 0];
+  const rightFlatPos = [halfW + assemblyDisplacementAdjusted, -halfH, 0];
+  const rightFlatRot = [-Math.PI / 2, 0, Math.PI / 2];
+
   const topPos = [0, halfH, 0];
+  const topRot = [-Math.PI / 2, 0, 0];
+  const topInitialPos = [0, halfH + assemblyDisplacementAdjusted, 0];
+  const topFlatPos = [rightFlatPos[0], -halfH, 0];
+  const topFlatRot = [-Math.PI / 2, 0, 0];
+
   const bottomPos = [0, -halfH, 0];
+  const bottomRot = [Math.PI / 2, 0, 0];
+  const bottomInitialPos = [0, -halfH, 0];
+  const bottomFlatPos = [0, -halfH, 0];
+  const bottomFlatRot = [-Math.PI / 2, 0, 0];
+  
 
   // Define configurations for each face
   const faceConfigs = {
       // Ensure sizesA/sizesB map correctly to how computeBoards determines type
-      front:  { sizesA: boardSizes.x, sizesB: boardSizes.y, position: frontPos, rotation: [0, 0, 0] },
-      back:   { sizesA: boardSizes.x.slice().reverse(), sizesB: boardSizes.y, position: backPos, rotation: [0, Math.PI, 0] },
-      left:   { sizesA: boardSizes.z, sizesB: boardSizes.y, position: leftPos, rotation: [0, -Math.PI / 2, 0] },
-      right:  { sizesA: boardSizes.z.slice().reverse(), sizesB: boardSizes.y, position: rightPos, rotation: [0, Math.PI / 2, 0] },
-      top:    { sizesA: boardSizes.x, sizesB: boardSizes.z.slice().reverse(), position: topPos, rotation: [-Math.PI / 2, 0, 0] },
-      bottom: { sizesA: boardSizes.x, sizesB: boardSizes.z, position: bottomPos, rotation: [Math.PI / 2, 0, 0] }
+      front:  { sizesA: boardSizes.x, sizesB: boardSizes.y, 
+        final_position: frontPos, final_rotation: frontRot,
+        initial_position: frontInitialPos, initial_rotation: frontRot,
+        flat_position: frontFlatPos, flat_rotation: frontFlatRot },
+      back:   { sizesA: boardSizes.x.slice().reverse(), sizesB: boardSizes.y, 
+        final_position: backPos, final_rotation: backRot, 
+        initial_position: backInitialPos, initial_rotation: backRot,
+        flat_position: backFlatPos, flat_rotation: backFlatRot },
+      left:   { sizesA: boardSizes.z, sizesB: boardSizes.y, 
+        final_position: leftPos, final_rotation: leftRot ,
+        initial_position: leftInitialPos, initial_rotation: leftRot,
+        flat_position: leftFlatPos, flat_rotation: leftFlatRot },
+      right:  { sizesA: boardSizes.z.slice().reverse(), sizesB: boardSizes.y, 
+        final_position: rightPos, final_rotation: rightRot, 
+        initial_position: rightInitialPos, initial_rotation: rightRot,
+        flat_position: rightFlatPos, flat_rotation: rightFlatRot },
+      top:    { sizesA: boardSizes.x, sizesB: boardSizes.z.slice().reverse(), 
+        final_position: topPos, final_rotation: topRot, 
+        initial_position: topInitialPos, initial_rotation: topRot,
+        flat_position: topFlatPos, flat_rotation: topFlatRot },
+      bottom: { sizesA: boardSizes.x, sizesB: boardSizes.z, 
+        final_position: bottomPos, final_rotation: bottomRot,
+        initial_position: bottomInitialPos, initial_rotation: bottomRot,
+        flat_position: bottomFlatPos, flat_rotation: bottomFlatRot }
   };
 
   // Build the final faceLayouts object
@@ -242,8 +327,12 @@ export function calculateFaceLayouts(boardSizes) {
   Object.entries(faceConfigs).forEach(([faceName, cfg]) => {
       faceLayouts[faceName] = {
           boards: computeBoards(cfg.sizesA, cfg.sizesB), // Get boards with type info
-          position: cfg.position,
-          rotation: cfg.rotation
+          final_position: cfg.final_position,
+          final_rotation: cfg.final_rotation,
+          initial_position: cfg.initial_position, 
+          initial_rotation: cfg.initial_rotation, 
+          flat_position: cfg.flat_position,
+          flat_rotation: cfg.flat_rotation
       };
   });
 

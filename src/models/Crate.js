@@ -2,8 +2,16 @@ import React, { useContext } from 'react';
 import Face from './Face';
 import Cube from './Cube';
 import { CrateContext } from '../store/CrateContext';
+import { getPhaseProgress } from '../utils/animation';
 
-export default function Crate({ faceLayouts, cubeLayouts, thickness, ...props }) {
+export default function Crate({ 
+  faceLayouts, 
+  cubeLayouts, 
+  thickness, 
+  scale,
+  position,
+  outerDims
+}) {
   const { assemblyProgress } = useContext(CrateContext);
 
   if (!faceLayouts || typeof faceLayouts !== 'object') {
@@ -12,8 +20,8 @@ export default function Crate({ faceLayouts, cubeLayouts, thickness, ...props })
   }
 
   // Get corner and edge cubes from cubeLayouts
-  const cornerCubes = cubeLayouts?.cornerCubes || [];
-  const edgeCubes = cubeLayouts?.edgeCubes || [];
+  const cornerCubes = cubeLayouts.cornerCubes;
+  const edgeCubes = cubeLayouts.edgeCubes;
 
   // Create arrays to hold our components
   const components = [];
@@ -22,7 +30,37 @@ export default function Crate({ faceLayouts, cubeLayouts, thickness, ...props })
 
   let unitProgress = 1.0 / (Object.keys(faceLayouts).length + cornerCubes.length + edgeCubes.length);
 
+  // #region define and calculate progress
+  const phaseProportions = {
+    'faces': 0.9,
+    'cubes': 0.1
+  }
+  const facesProgress = getPhaseProgress(phaseProportions, assemblyProgress, 'faces');
+  const cubesProgress = getPhaseProgress(phaseProportions, assemblyProgress, 'cubes');
 
+  // Calculate the progress for for each face
+  const perFaceProportion = 1.0 / Object.keys(faceLayouts).length;
+  const faceProgresses = Object.keys(faceLayouts).map((faceName, index) => {
+    // Calculate the progress for this face based on its index
+    const faceStart = index * perFaceProportion;
+    const faceEnd = (index + 1) * perFaceProportion;
+    const faceProgress = Math.max(0, Math.min(1, (facesProgress - faceStart) / (faceEnd - faceStart)));
+    
+    return faceProgress;
+  });
+
+  // Calculate the progress for corner and edge cubes
+  const perCubeProportion = 1.0 / (cornerCubes.length + edgeCubes.length);
+  const cubeProgresses = [...cornerCubes, ...edgeCubes].map((_, index) => {
+    // Calculate the progress for this cube based on its index
+    const cubeStart = index * perCubeProportion;
+    const cubeEnd = (index + 1) * perCubeProportion;
+    const cubeProgress = Math.max(0, Math.min(1, (cubesProgress - cubeStart) / (cubeEnd - cubeStart)));
+    
+    return cubeProgress;
+  });
+
+  // #endregion
 
 
 
@@ -41,21 +79,19 @@ export default function Crate({ faceLayouts, cubeLayouts, thickness, ...props })
   for (let i = 0; i < faceEntriesArray.length; i++) {
     const faceName = faceEntriesArray[i][0];
     const layout = faceEntriesArray[i][1];
-
-    let usedProgress = unitProgress;
-    if (remainingProgress < usedProgress) {
-      usedProgress = remainingProgress;
-    }
-    remainingProgress -= usedProgress;
     
     components.push(
       <Face
         key={faceName}
         name={faceName}
-        progress={usedProgress / unitProgress}
+        progress={faceProgresses[i]}
         boards={layout.boards}
-        position={layout.position}
-        rotation={layout.rotation}
+        final_position={layout.final_position}
+        final_rotation={layout.final_rotation}
+        initial_position={layout.initial_position}
+        initial_rotation={layout.initial_rotation}
+        flat_position={layout.flat_position}
+        flat_rotation={layout.flat_rotation}
         thickness={thickness}
       />
     );
@@ -65,19 +101,14 @@ export default function Crate({ faceLayouts, cubeLayouts, thickness, ...props })
   for (let i = 0; i < cornerCubes.length; i++) {
     const cube = cornerCubes[i];
 
-    let usedProgress = unitProgress;
-    if (remainingProgress < usedProgress) {
-      usedProgress = remainingProgress;
-    }
-    remainingProgress -= usedProgress;
-    
-
     components.push(
       <Cube
         key={`corner-${i}`}
-        progress={usedProgress / unitProgress}
-        position={cube.position}
-        rotation={cube.rotation}
+        progress={cubeProgresses[i]}
+        final_position={cube.final_position}
+        final_rotation={cube.final_rotation}
+        initial_position={cube.initial_position}
+        initial_rotation={cube.initial_rotation}
       />
     );
   }
@@ -86,26 +117,26 @@ export default function Crate({ faceLayouts, cubeLayouts, thickness, ...props })
   for (let i = 0; i < edgeCubes.length; i++) {
     const cube = edgeCubes[i];
 
-    let usedProgress = unitProgress;
-    if (remainingProgress < usedProgress) {
-      usedProgress = remainingProgress;
-    }
-    remainingProgress -= usedProgress;
-    
-
     components.push(
       <Cube
         key={`edge-${i}`}
-        progress={usedProgress / unitProgress}
-        position={cube.position}
-        rotation={cube.rotation}
+        progress={cubeProgresses[i + cornerCubes.length]}
+        final_position={cube.final_position}
+        final_rotation={cube.final_rotation}
+        initial_position={cube.initial_position}
+        initial_rotation={cube.initial_rotation}
       />
     );
   }
 
 
   return (
-    <group {...props}>
+    <group 
+      position={position} 
+      scale={scale} 
+      rotation={[0, 0, 0]} 
+      outerDims={outerDims} // Pass outerDims to the group
+    >
       {components}
     </group>
   );

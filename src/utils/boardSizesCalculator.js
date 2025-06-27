@@ -58,6 +58,9 @@ function generateCandidateForDimension(D, useMedium = false, smallCount = 0) {
  * possibility, try small boards count from 0 up to a maximum (say 7).
  */
 function generateCandidatesForDimension(D) {
+
+  D -= 1e-5; // Adjust D slightly to avoid expanding the board numbers
+
   const candidates = [];
   
   // keep adding sizeLarge boards right before exceeding D

@@ -1,15 +1,22 @@
 import React, { useContext } from 'react';
 import { ModelContext } from '../store/ModelContext';
 import * as THREE from 'three'; // Import THREE.js for matrix operations
-import { assemblyDisplacement } from '../configs/globalConfigs';
+import { assemblyDisplacementCube } from '../configs/globalConfigs';
+import { getPhaseProgress } from '../utils/animation';
 
-export default function Cube({ progress, position = [0, 0, 0], rotation = [0, 0, 0], ...props }) {
+export default function Cube({ 
+  progress, 
+  final_position, 
+  final_rotation,
+  initial_position,
+  initial_rotation
+}) {
   const models = useContext(ModelContext);
   
   if (!models || !models.cube) {
     console.error('Cube model not found in ModelContext. Available models:', models ? Object.keys(models) : 'none');
     return (
-      <mesh position={position} rotation={rotation} {...props}>
+      <mesh position={final_position} rotation={final_rotation}>
         <boxGeometry args={[5, 5, 5]} /> {/* Larger size for visibility */}
         <meshStandardMaterial color="orange" />
       </mesh>
@@ -29,30 +36,48 @@ export default function Cube({ progress, position = [0, 0, 0], rotation = [0, 0,
     console.warn(child);
   }
 
-  // Calculate positions for animation
-  let finalPos = position.slice();
-  let initialPos = finalPos.slice();
 
-  // Create displacement vector (pointing in +Z direction by default)
-  let assemblyDisplacementVector = new THREE.Vector3(0, 0, 1);
+  // #region define and calculate progress
+  const phaseProportions = {
+    'appear': 0.4,
+    'move': 0.6
+  };
+  const appearProgress = getPhaseProgress(phaseProportions, progress, 'appear');
+  const moveProgress = getPhaseProgress(phaseProportions, progress, 'move');
+  // #endregion
 
-  // Apply rotation to the displacement vector
-  const rotationMatrix = new THREE.Matrix4();
-  rotationMatrix.makeRotationFromEuler(new THREE.Euler(rotation[0], rotation[1], rotation[2], 'ZYX'));
-  assemblyDisplacementVector.applyMatrix4(rotationMatrix);
 
-  // Apply the rotated displacement to calculate initial position
-  initialPos[0] += assemblyDisplacementVector.x * assemblyDisplacement;
-  initialPos[1] += assemblyDisplacementVector.y * assemblyDisplacement;
-  initialPos[2] += assemblyDisplacementVector.z * assemblyDisplacement;
+  if (appearProgress === 0) {
+    return null;
+  }
 
-  // Calculate current position based on progress
-  let currentPos = [0, 0, 0];
-  currentPos[0] = initialPos[0] + (finalPos[0] - initialPos[0]) * progress;
-  currentPos[1] = initialPos[1] + (finalPos[1] - initialPos[1]) * progress;
-  currentPos[2] = initialPos[2] + (finalPos[2] - initialPos[2]) * progress;
-  
+  // #region Calculate the current position and rotation of the cube
+  let finalPos = final_position.slice();
+  let initialPos = initial_position.slice();
+  let t = moveProgress; // Assuming progress is a value between 0 and 1
+  const currentPos = [
+    initialPos[0] + (finalPos[0] - initialPos[0]) * t,
+    initialPos[1] + (finalPos[1] - initialPos[1]) * t,
+    initialPos[2] + (finalPos[2] - initialPos[2]) * t
+  ];
+  const currentRotation = [
+    initial_rotation[0] + (final_rotation[0] - initial_rotation[0]) * t,
+    initial_rotation[1] + (final_rotation[1] - initial_rotation[1]) * t,
+    initial_rotation[2] + (final_rotation[2] - initial_rotation[2]) * t
+  ];
+  // #endregion
+
+
+  // #region update opacity based on progress
+  if (child.isMesh) {
+    child.material.transparent = true; // Ensure transparency is enabled
+    child.material.opacity = appearProgress;
+  }
+  // #endregion
+
+
+
   return (
-    <primitive object={cubeModel} position={currentPos} rotation={rotation} {...props} />
+    <primitive object={cubeModel} position={currentPos} rotation={currentRotation} />
   );
 }

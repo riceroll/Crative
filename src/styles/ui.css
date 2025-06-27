@@ -1,6 +1,8 @@
 :root {
     --primary-color: #4a6fa5;
     --primary-light: #6789bd;
+    --primary-dim: #98c2e7;
+    --primary-very-light: #c4e1f6;
     --primary-dark: #345684;
 
     --color-0: #F4809E;
@@ -68,7 +70,7 @@
     font-weight: 600;
     color: var(--text-color);
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
   }
 
@@ -113,6 +115,16 @@
     width: 0;
     height: 0;
   }
+
+  .toggle-inches {
+    float: right!important;
+    /* position: relative; */
+    /* display: inline-block; */
+    width: 50px;
+    height: 20px;
+    margin-right: 0px;
+  }
+  
   
   .slider {
     position: absolute;
@@ -145,11 +157,70 @@
   input:checked + .slider:before {
     transform: translateX(18px);
   }
+
   
+  .slider-inch {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* background-color: #ccc; */
+    background-color: var(--primary-dim);
+    transition: .3s;
+    border-radius: 20px;
+  }
+  
+  .slider-inch:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+  }
+  
+
+  input:checked + .slider-inch {
+    background-color: var(--primary-dim);
+  }
+  
+  input:checked + .slider-inch:before {
+    transform: translateX(30px);
+  }
+
+
   .toggle-label {
     font-size: var(--font-size-normal);
+    z-index: 999;
     /* user-select: none; */
   }
+
+  .toggle-label-cm {
+    position: absolute;
+    left: 22px;
+    bottom: 2px;
+    font-size: var(--font-size-normal);
+    color: white;
+    z-index: 999;
+    cursor: pointer;
+  }
+
+
+  .toggle-label-in {
+    position: absolute;
+    font-size: var(--font-size-normal);
+    left: 12px;
+    bottom: 2px;
+    color: white;
+    z-index: 999;
+    cursor: pointer;
+  }
+  
   
 
   
@@ -213,7 +284,7 @@
     font-size: var(--font-size-normal);
     font-weight: 500;
     color: var(--text-color);
-    width: 80px;
+    width: 90px;
   }
 
 .number-input {
@@ -279,19 +350,19 @@
 }
 
 .option-label-Price {
-  background-color: var(--color-0);
+  background-color: var(--primary-very-light);
 }
 
 .option-label-Boards {
-  background-color: var(--color-1);
+  background-color: var(--primary-very-light);
 }
 
 .option-label-Volume {
-  background-color: var(--color-2);
+  background-color: var(--primary-very-light);
 }
 
 .option-label-Balanced {
-  background-color: var(--color-3);
+  background-color: var(--primary-very-light);
 }
 
 .option-value {
@@ -305,7 +376,7 @@
 .component-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 0px;
 }
 
 .component-table th,
@@ -357,10 +428,11 @@
   align-items: center;
   width: 100%;
   padding: 10px 0;
+  border-radius: 10px;
 }
 
 .progress-slider {
-  flex: 0.9; /* Takes 90% of the available space */
+  flex: 1.0; /* Takes 90% of the available space */
   height: 6px;
   margin-right: 10px;
   -webkit-appearance: none;
@@ -397,3 +469,103 @@
   font-size: 14px;
 }
 
+
+
+
+
+/* ...existing styles... */
+
+.fullscreen-slider {
+  position: fixed !important;
+  bottom: 1vw;
+  /* left: 0; */
+  width: 98vw !important;
+  padding: 0 !important;
+  /* height: 100vh !important; */
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  border: none;
+  /* display: flex; */
+  /* flex-direction: column; */
+  /* justify-content: center; */
+  /* align-items: center; */
+  /* pointer-events: auto; */
+}
+
+.fullscreen-slider .card-title {
+  display: none;
+  /* position: absolute;
+  top: 20px;
+  /* background: rgba(255, 255, 255, 0.9); */
+  /* padding: 10px 20px; */
+  /* border-radius: 5px; */
+}
+
+.fullscreen-slider .slider-container {
+  width: 100%;
+  background-color: rgba(200, 200, 200, 0.1);
+  /* opacity: 0.6; */
+  /* height: 2px; */
+  /* display: flex; */
+  /* align-items: center; */
+}
+.fullscreen-slider .progress-slider {
+  /* To control the slider's length, set its width and also override the parent container's padding/margins if needed */
+  flex: 100;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  /* Remove margin if present on parent */
+  margin: 10px;
+  /* height: 2px; */
+  /* background: #333; */
+  /* border-radius: 1px; */
+}
+
+.fullscreen-slider .progress-slider::-webkit-slider-thumb {
+  /* width: 20px;
+  height: 20px;
+  background: #4a80f5; */
+}
+
+.fullscreen-slider .progress-slider::-moz-range-thumb {
+  /* width: 20px;
+  height: 20px;
+  background: #4a80f5; */
+}
+
+.fullscreen-slider .slider-value {
+  /* display: none; */
+  /* background: rgba(255, 255, 255, 0.9); */
+  /* padding: 10px 20px; */
+  /* border-radius: 5px; */
+  /* font-size: 18px; */
+}
+
+.toggle-fullscreen-btn {
+  /* background-color: white; */
+  box-shadow: none;
+  /* border-radius: 0 !important; */
+  padding: 5.88px 5.88px 0px 5.88px;
+  font-size: 20px;
+}
+
+.toggle-fullscreen-btn:hover {
+  background-color: var(--hover-bg);
+  cursor: pointer;
+}
+.fullscreen-slider .toggle-fullscreen-btn {
+  
+  margin-left: 10px;
+}
+
+.fullscreen-slider .slider-value {
+  flex: 0.1; /* Takes 10% of the available space */
+  text-align: center;
+  margin-left: 5px;
+  margin-right: 5px;
+  font-weight: 500;
+  min-width: 40px; /* Ensures the percentage always has enough space */
+  font-size: 14px;
+}
