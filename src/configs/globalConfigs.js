@@ -8,6 +8,8 @@ export const colors = [
     '#8FA6CA'
 ];
 
+export const cubeColor = "#F6D33C";
+
 export const defaultColor = '#555'; // Default color for boards
 
 export const assemblyDisplacement = 50;

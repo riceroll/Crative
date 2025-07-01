@@ -76,9 +76,9 @@
 
   .input-form-grid {
     display: grid;
-    grid-template-columns: auto 1fr;
-    row-gap: 12px;
-    column-gap: 16px;
+    grid-template-columns: auto 1fr 2fr;
+    row-gap: 8px;
+    column-gap: 4px;
     align-items: center;
   }
   
@@ -121,8 +121,7 @@
     /* position: relative; */
     /* display: inline-block; */
     width: 50px;
-    height: 20px;
-    margin-right: 0px;
+    right: 30px;
   }
   
   
@@ -222,6 +221,58 @@
   }
   
   
+  .unit-selector {
+    margin-left: 1em;
+    position: relative;
+  }
+  
+  .unit-dropdown {
+    padding-top: 0!important;
+    padding-bottom: 0!important;
+    appearance: none;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 70px;
+    height: 25px;
+    
+    /* Custom arrow */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1rem;
+  }
+  
+  .unit-dropdown:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .unit-dropdown:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .unit-dropdown {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f9fafb;
+    }
+    
+    .unit-dropdown:hover,
+    .unit-dropdown:focus {
+      border-color: #60a5fa;
+    }
+  }
 
   
   /* App layout */
@@ -284,7 +335,8 @@
     font-size: var(--font-size-normal);
     font-weight: 500;
     color: var(--text-color);
-    width: 90px;
+    width:60px;
+    text-align: cent;
   }
 
 .number-input {
@@ -383,7 +435,7 @@
 .component-table td {
   border-bottom: 1px solid #eee;
   padding: 8px 4px;
-  text-align: left;
+  text-align: center;
   vertical-align: middle;
 }
 
@@ -403,6 +455,14 @@
   align-items: center;
 }
 
+
+.component-color-bar {
+  width: 5px; /* Adjust size as needed */
+  height: 30px; /* Adjust size as needed */
+  margin-right: 6px;
+  object-fit: contain; /* Keep aspect ratio */
+}
+
 .component-image {
   width: 30px; /* Adjust size as needed */
   height: 30px; /* Adjust size as needed */
@@ -414,6 +474,7 @@
 .unit-price-col {
   display: none;
 }
+
 
 /* Show it when printing */
 @media print {

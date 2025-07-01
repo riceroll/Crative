@@ -26,54 +26,40 @@ export default function InputForm() {
 
   return (
     <form
-    className='card'
-      
+      className='card'
       onSubmit={handleSubmit}
     >
-
-      <div 
-        className='card-title'
-      >
+      <div className='card-title'>
         Cargo Dimensions
 
+        <div className="unit-selector dropdown-switch toggle-inches">
+          <select
+            value={useInch ? 'inch' : 'cm'}
+            onChange={(e) => {
+              if ((e.target.value === 'inch' && !useInch) || (e.target.value === 'cm' && useInch)) {
+                toggleUseInch();
+              }
+            }}
+            className="unit-dropdown"
+          >
+            <option value="cm">cm</option>
+            <option value="inch">inch</option>
+          </select>
+        </div>
 
-          
-        <label className="toggle-switch toggle-inches">
-
-        <span className="toggle-label-cm" style={{
-            display: useInch ? 'none' : 'inline'
-          }}>cm</span>
-
-
-          <input
-            type="checkbox"
-            checked={useInch}
-            onChange={toggleUseInch}
-          />
-
-
-          <span className="slider slider-inch"></span>
-
-          <span className="toggle-label-in" style={{
-            display: useInch ? 'inline' : 'none'
-          }}>in</span>
-        </label>
-        
       </div>
 
       {/* Grid container with two columns: one for labels, one for inputs */}
-      <div
-        className='input-form-grid'
-      >
+      <div className='input-form-grid'>
         <label className='input-form-label' htmlFor="width">
-          Width {useInch ? '(inch)' : '(cm)'}:
+          Width :
         </label>
         <input
           className="number-input"
           id="width"
           type="number"
           name="width"
-          value={ displayDims.width }
+          value={displayDims.width}
           onChange={handleChange}
           onBlur={handleBlur}
           onKeyDown={(e) => {
@@ -82,9 +68,12 @@ export default function InputForm() {
             }
           }}
         />
+        <label>
+          {useInch ? 'inch' : 'cm'}
+        </label>
 
         <label className='input-form-label' htmlFor="depth">
-          Depth {useInch ? '(inch)' : '(cm)'}:
+          Depth :
         </label>
         <input
           className="number-input"
@@ -100,9 +89,12 @@ export default function InputForm() {
             }
           }}
         />
+        <label>
+          {useInch ? 'inch' : 'cm'}
+        </label>
 
         <label className='input-form-label' htmlFor="height">
-          Height {useInch ? '(inch)' : '(cm)'}:
+          Height :
         </label>
         <input
           className="number-input"
@@ -118,6 +110,9 @@ export default function InputForm() {
             }
           }}
         />
+        <label>
+          {useInch ? 'inch' : 'cm'}
+        </label>
       </div>
     </form>
   );

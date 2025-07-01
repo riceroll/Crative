@@ -13,8 +13,8 @@ export default function App() {
         className='sidebar'      
       >
         <InputForm />
-        <VisualizationOptions /> 
         <OptionsList />
+        <VisualizationOptions /> 
         <ComponentList />
         <ProgressSlider />
       </div>
