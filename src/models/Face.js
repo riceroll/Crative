@@ -101,6 +101,7 @@ function calculateExplosionAxis(stripsMap) {
 }
 
 
+
 export default function Face({ 
   name,
   progress, 
@@ -111,19 +112,11 @@ export default function Face({
   initial_rotation,
   flat_position,
   flat_rotation,  
-  thickness
+  thickness,
+  onFocus
 }) {
   const models = useContext(ModelContext);
-  
-  // Early return if no boards
-  if (!boards || !Array.isArray(boards) || boards.length === 0) {
-    console.warn(`No boards for face ${name}`);
-    return (
-      <group position={final_position} rotation={final_rotation}>
-        {/* Optional: Add a placeholder for empty faces */}
-      </group>
-    );
-  }
+
 
   // #region Define and calculate progress for each phase
   const phaseProportions = {
@@ -190,7 +183,18 @@ export default function Face({
   ];
 
   // #endregion Caclulate current position and rotation
-  
+
+  // Focus camera on this board when it's visible
+  React.useEffect(() => {
+    if (stripsProgress > 0 && stripsProgress < 0.9) {
+
+      onFocus([currentPos[0] * 0.1, currentPos[1] * 0.1, currentPos[2] * 0.1]);
+    }
+    if (preMoveProgress > 0 && preMoveProgress < 0.9) {
+      // onFocus([0,0,0]);
+    }
+  }, [stripsProgress, currentPos, onFocus]);
+
 
   // #region Prepare corners to render
   const cornersToRender = [];

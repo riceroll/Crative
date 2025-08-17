@@ -13,6 +13,7 @@ export default function Crate({
   outerDims
 }) {
   const { assemblyProgress } = useContext(CrateContext);
+  const { setFocusPosition } = useContext(CrateContext);
 
   if (!faceLayouts || typeof faceLayouts !== 'object') {
     console.warn('Crate component requires a valid faceLayouts prop. Got:', faceLayouts);
@@ -93,6 +94,7 @@ export default function Crate({
         flat_position={layout.flat_position}
         flat_rotation={layout.flat_rotation}
         thickness={thickness}
+        onFocus={setFocusPosition} // Pass the onFocus function if it exists
       />
     );
   }

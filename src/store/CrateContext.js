@@ -14,6 +14,7 @@ export function CrateProvider({ children }) {
   const [visualizeBoardTypes, setVisualizeBoardTypes] = useState(false);
   const [useInch, setUseInch] = useState(true);
   const [assemblyProgress, setAssemblyProgress] = useState(1.0);
+  const [focusPosition, setFocusPosition] = useState([0, 0, 0]);
 
   // Recompute candidate crates whenever innerDims change
   useEffect(() => {
@@ -57,7 +58,9 @@ export function CrateProvider({ children }) {
         useInch,
         toggleUseInch, 
         assemblyProgress,
-        setAssemblyProgress
+        setAssemblyProgress,
+        focusPosition,
+        setFocusPosition
       }}
     >
       {children}
