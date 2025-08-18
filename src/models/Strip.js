@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import Board from './Board';
+import { CrateContext } from '../store/CrateContext';
 import { assemblyDisplacement } from '../configs/globalConfigs';
 import { getPhaseProgress } from '../utils/animation';
 import * as THREE from 'three';
@@ -17,7 +18,7 @@ export default function Strip({
   initial_rotation // Initial rotation of this strip, relative to Face's group
 
 }) {
-  
+  const { setFocusPosition } = useContext(CrateContext);
 
   // #region define and calculate progress
   const phaseProportions = {
@@ -74,6 +75,12 @@ export default function Strip({
     posA[2] + (posB[2] - posA[2]) * t
   ];
 
+  let middlePos = [
+    (posA[0] + posB[0]) / 2,
+    (posA[1] + posB[1]) / 2,
+    (posA[2] + posB[2]) / 2
+  ];
+
   // Interpolate current rotation based on progress
   const currentRotation = [
     rotA[0] + (rotB[0] - rotA[0]) * t,
@@ -82,8 +89,15 @@ export default function Strip({
   ];
 
   // #endregion
+  useEffect(() => {
+    if (
+      (moveProgress > 0 && moveProgress < 1)
+    ) {
 
-
+      setFocusPosition([middlePos[0] * 0.1, middlePos[1] * 0.1, middlePos[2] * 0.1]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moveProgress, boardProgresses, middlePos, setFocusPosition]);
 
   return (
     // The group's rotation is its final rotation. Its position is animated.

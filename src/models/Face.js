@@ -3,6 +3,7 @@ import Board from './Board';
 import Strip from './Strip'; // Import Strip component
 import Cube from './Cube';
 import { ModelContext } from '../store/ModelContext';
+import { CrateContext } from '../store/CrateContext';
 import { assemblyDisplacement } from '../configs/globalConfigs';
 import { getPhaseProgress } from '../utils/animation'; // Import the animation utility
 import * as THREE from 'three'; // Import THREE.js for matrix operations
@@ -112,10 +113,11 @@ export default function Face({
   initial_rotation,
   flat_position,
   flat_rotation,  
-  thickness,
-  onFocus
+  thickness
 }) {
   const models = useContext(ModelContext);
+
+  const { setFocusPosition } = useContext(CrateContext);
 
 
   // #region Define and calculate progress for each phase
@@ -126,10 +128,14 @@ export default function Face({
     'final_move': 0.1
   };
   
-  const stripsProgress = getPhaseProgress(phaseProportions, progress, 'strips');
-  const cubesProgress = getPhaseProgress(phaseProportions, progress, 'cubes');
-  const preMoveProgress = getPhaseProgress(phaseProportions, progress, 'pre_move');
-  const finalMoveProgress = getPhaseProgress(phaseProportions, progress, 'final_move');
+  const { stripsProgress, cubesProgress, preMoveProgress, finalMoveProgress } = React.useMemo(() => ({
+    stripsProgress: getPhaseProgress(phaseProportions, progress, 'strips'),
+    cubesProgress: getPhaseProgress(phaseProportions, progress, 'cubes'),
+    preMoveProgress: getPhaseProgress(phaseProportions, progress, 'pre_move'),
+    finalMoveProgress: getPhaseProgress(phaseProportions, progress, 'final_move'),
+  }), [progress]);
+
+
 
   // #endregion
 
@@ -175,6 +181,14 @@ export default function Face({
     posA[1] + (posB[1] - posA[1]) * t,
     posA[2] + (posB[2] - posA[2]) * t
   ];
+
+  // Calculate the middle position of the trajectory
+  let middlePos = [
+    posA[0] + (posB[0] - posA[0]) * 0.5,
+    posA[1] + (posB[1] - posA[1]) * 0.5,
+    posA[2] + (posB[2] - posA[2]) * 0.5
+  ];
+
   // Interpolate current rotation based on progress
   const currentRotation = [
     rotA[0] + (rotB[0] - rotA[0]) * t,
@@ -186,14 +200,14 @@ export default function Face({
 
   // Focus camera on this board when it's visible
   React.useEffect(() => {
-    if (stripsProgress > 0 && stripsProgress < 0.9) {
+    if (
+      (preMoveProgress > 0 && preMoveProgress < 1) ||
+      (finalMoveProgress > 0 && finalMoveProgress < 1)
+    ) {
+      setFocusPosition([middlePos[0] * 0.1, middlePos[1] * 0.1, middlePos[2] * 0.1]);
+    }
 
-      onFocus([currentPos[0] * 0.1, currentPos[1] * 0.1, currentPos[2] * 0.1]);
-    }
-    if (preMoveProgress > 0 && preMoveProgress < 0.9) {
-      // onFocus([0,0,0]);
-    }
-  }, [stripsProgress, currentPos, onFocus]);
+  }, [preMoveProgress, finalMoveProgress, setFocusPosition]);
 
 
   // #region Prepare corners to render
@@ -398,15 +412,18 @@ export default function Face({
 
       // Rotate faceExplosionAxis by 90 degrees counter-clockwise from top view
       // This creates a perpendicular direction for board assembly within strips
-      if (Math.abs(faceExplosionAxis[0]) > Math.abs(faceExplosionAxis[1])) {
-        // Primary axis is X, rotate to Y
-        boxAssemblyDirection = [0, -faceExplosionAxis[0], 0];
-      } else if (Math.abs(faceExplosionAxis[1]) > Math.abs(faceExplosionAxis[0])) {
-        // Primary axis is Y, rotate to X
-        boxAssemblyDirection = [faceExplosionAxis[1], 0, 0];
-      } else {
-        // Primary axis is Z, use X as default perpendicular
+      if (Math.abs(faceExplosionAxis[0]) > Math.abs(faceExplosionAxis[2])) {
+        // if primary axis is X
+        boxAssemblyDirection = [0, 0, -1];
+
+        // if primary axis is Z
+      } else if (Math.abs(faceExplosionAxis[2]) > Math.abs(faceExplosionAxis[0])) {
         boxAssemblyDirection = [1, 0, 0];
+      } else {
+        // if primary axis is Y
+        // warning
+        let warning_string = "Warning: Face explosion axis is not aligned with any primary axis.";
+        console.warn(warning_string, faceExplosionAxis);
       }
 
       let initialRelativePos = [

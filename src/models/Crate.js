@@ -94,7 +94,6 @@ export default function Crate({
         flat_position={layout.flat_position}
         flat_rotation={layout.flat_rotation}
         thickness={thickness}
-        onFocus={setFocusPosition} // Pass the onFocus function if it exists
       />
     );
   }

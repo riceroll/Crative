@@ -3,6 +3,7 @@ import { ModelContext } from '../store/ModelContext';
 import { CrateContext } from '../store/CrateContext';
 import { boardTypes } from '../configs/boardConfig';
 import { getPhaseProgress } from '../utils/animation';
+import { useEffect } from 'react';
 
 export default function Board({ 
   type, 
@@ -14,23 +15,12 @@ export default function Board({
 }) {
   const models = useContext(ModelContext);
   const { visualizeBoardTypes } = useContext(CrateContext);
+  const { setFocusPosition } = useContext(CrateContext);
 
   // Convert the type string to a model key
   const modelKey = type && type.includes('board_') 
     ? 'b' + type.substring(6) // Convert "board_40x40" to "b40x40"
     : type;
-
-  if (!models || !models[modelKey]) {
-    console.error(`Model for type "${type}" (key: "${modelKey}") not found in:`, models);
-    // Render a placeholder cube with conditional coloring for debugging
-    const color = 'red';
-    return (
-      <mesh position={final_position} rotation={final_rotation}>
-        <boxGeometry args={[5, 5, 0.5]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    );
-  }
 
 
   // #region define and calculate progress
@@ -41,11 +31,6 @@ export default function Board({
 
   const appearProgress = getPhaseProgress(phaseProportions, progress, 'appear');
   const moveProgress = getPhaseProgress(phaseProportions, progress, 'move');
-
-
-  if (appearProgress === 0) {
-    return null;
-  }
 
   // #endregion
 
@@ -61,6 +46,7 @@ export default function Board({
     initialPos[1] + (finalPos[1] - initialPos[1]) * t,
     initialPos[2] + (finalPos[2] - initialPos[2]) * t
   ];
+
   const currentRotation = [
     initialRotation[0] + (finalRotation[0] - initialRotation[0]) * t,
     initialRotation[1] + (finalRotation[1] - initialRotation[1]) * t,
@@ -68,7 +54,21 @@ export default function Board({
   ];
   // #endregion
 
+  useEffect(() => {
+    if (
+      (appearProgress > 0 && appearProgress < 1) ||
+      (moveProgress > 0 && moveProgress < 1)
+    ) {
+      let middlePos = [
+        (initialPos[0] + finalPos[0]) * 0.5,
+        (initialPos[1] + finalPos[1]) * 0.5,
+        (initialPos[2] + finalPos[2]) * 0.5
+      ];
 
+      setFocusPosition([middlePos[0] * 0.1, middlePos[1] * 0.1, middlePos[2] * 0.1]);
+    }
+    
+  }, [appearProgress, moveProgress, initialPos, finalPos, setFocusPosition]);
 
   // Clone the model for this board
   const Model = models[modelKey].clone();
@@ -94,6 +94,24 @@ export default function Board({
     child.material.opacity = appearProgress;
   }
   // #endregion
+
+
+  if (appearProgress === 0) {
+    return null;
+  }
+
+
+  if (!models || !models[modelKey]) {
+    console.error(`Model for type "${type}" (key: "${modelKey}") not found in:`, models);
+    // Render a placeholder cube with conditional coloring for debugging
+    const color = 'red';
+    return (
+      <mesh position={final_position} rotation={final_rotation}>
+        <boxGeometry args={[5, 5, 0.5]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    );
+  }
 
   return (
     <primitive 

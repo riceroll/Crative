@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { ModelContext } from '../store/ModelContext';
+import { CrateContext } from '../store/CrateContext';
 import * as THREE from 'three'; // Import THREE.js for matrix operations
 import { assemblyDisplacementCube } from '../configs/globalConfigs';
 import { getPhaseProgress } from '../utils/animation';
@@ -12,17 +13,8 @@ export default function Cube({
   initial_rotation
 }) {
   const models = useContext(ModelContext);
-  
-  if (!models || !models.cube) {
-    console.error('Cube model not found in ModelContext. Available models:', models ? Object.keys(models) : 'none');
-    return (
-      <mesh position={final_position} rotation={final_rotation}>
-        <boxGeometry args={[5, 5, 5]} /> {/* Larger size for visibility */}
-        <meshStandardMaterial color="orange" />
-      </mesh>
-    );
-  }
-  
+  const { setFocusPosition } = useContext(CrateContext);
+
   // Clone the cube model from context
   const cubeModel = models.cube.clone();
 
@@ -47,25 +39,42 @@ export default function Cube({
   // #endregion
 
 
-  if (appearProgress === 0) {
-    return null;
-  }
+  // #region Calculate the current position and rotation of the cube using React.useMemo
+  const [currentPos, currentRotation] = React.useMemo(() => {
+    let finalPos = final_position.slice();
+    let initialPos = initial_position.slice();
+    let t = moveProgress;
+    const pos = [
+      initialPos[0] + (finalPos[0] - initialPos[0]) * t,
+      initialPos[1] + (finalPos[1] - initialPos[1]) * t,
+      initialPos[2] + (finalPos[2] - initialPos[2]) * t
+    ];
+    const rot = [
+      initial_rotation[0] + (final_rotation[0] - initial_rotation[0]) * t,
+      initial_rotation[1] + (final_rotation[1] - initial_rotation[1]) * t,
+      initial_rotation[2] + (final_rotation[2] - initial_rotation[2]) * t
+    ];
 
-  // #region Calculate the current position and rotation of the cube
-  let finalPos = final_position.slice();
-  let initialPos = initial_position.slice();
-  let t = moveProgress; // Assuming progress is a value between 0 and 1
-  const currentPos = [
-    initialPos[0] + (finalPos[0] - initialPos[0]) * t,
-    initialPos[1] + (finalPos[1] - initialPos[1]) * t,
-    initialPos[2] + (finalPos[2] - initialPos[2]) * t
-  ];
-  const currentRotation = [
-    initial_rotation[0] + (final_rotation[0] - initial_rotation[0]) * t,
-    initial_rotation[1] + (final_rotation[1] - initial_rotation[1]) * t,
-    initial_rotation[2] + (final_rotation[2] - initial_rotation[2]) * t
-  ];
+    const middlePos = [
+      (initialPos[0] + finalPos[0]) / 2,
+      (initialPos[1] + finalPos[1]) / 2,
+      (initialPos[2] + finalPos[2]) / 2
+    ];
+
+    if (
+      (appearProgress > 0 && appearProgress < 1) ||
+      (moveProgress > 0 && moveProgress < 1)
+    ) {
+      setFocusPosition([middlePos[0] * 0.1, middlePos[1] * 0.1, middlePos[2] * 0.1]);
+    }
+
+    return [pos, rot];
+  }, [initial_position, final_position, initial_rotation, final_rotation, moveProgress]);
   // #endregion
+
+
+
+
 
 
   // #region update opacity based on progress
@@ -76,6 +85,19 @@ export default function Cube({
   // #endregion
 
 
+  if (appearProgress === 0) {
+    return null;
+  }
+
+  if (!models || !models.cube) {
+    console.error('Cube model not found in ModelContext. Available models:', models ? Object.keys(models) : 'none');
+    return (
+      <mesh position={final_position} rotation={final_rotation}>
+        <boxGeometry args={[5, 5, 5]} /> {/* Larger size for visibility */}
+        <meshStandardMaterial color="orange" />
+      </mesh>
+    );
+  }
 
   return (
     <primitive object={cubeModel} position={currentPos} rotation={currentRotation} />
