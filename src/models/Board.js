@@ -100,7 +100,7 @@ export default function Board({
     return null;
   }
 
-
+  
   if (!models || !models[modelKey]) {
     console.error(`Model for type "${type}" (key: "${modelKey}") not found in:`, models);
     // Render a placeholder cube with conditional coloring for debugging

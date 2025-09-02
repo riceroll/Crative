@@ -16,7 +16,7 @@ export default function ThreeDView() {
   const controlsRef = useRef();
 
   useEffect(() => {
-    if (controlsRef.current && focusPosition) {
+    if (controlsRef.current && focusPosition && false) {
         
       controlsRef.current.target.set(...focusPosition);
 
