@@ -47,7 +47,7 @@
         border-right: 1px solid var(--border-color);
 
         flex-direction: column;
-        overflow-y: auto;
+        overflow-y: overlay;
     }
   
   /* Card container styles */
@@ -629,4 +629,128 @@
   font-weight: 500;
   min-width: 40px; /* Ensures the percentage always has enough space */
   font-size: 14px;
+}
+
+/* Board Type Filter Styles */
+.filter-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-button {
+  background-color: var(--light-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 4px 8px;
+  font-size: var(--font-size-small);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.filter-button:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--primary-light);
+}
+
+.board-type-list {
+  margin-bottom: 12px;
+}
+
+.board-type-item {
+  margin-bottom: 8px;
+}
+
+.board-type-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: var(--font-size-normal);
+  transition: var(--transition);
+}
+
+.board-type-label:hover {
+  opacity: 0.8;
+}
+
+.board-type-checkbox {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.board-color-indicator {
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.board-type-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.board-type-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.board-type-price {
+  color: var(--secondary-text);
+  font-size: var(--font-size-normal);
+}
+
+.filter-summary {
+  margin-top: 12px;
+  font-size: var(--font-size-small);
+  color: var(--secondary-text);
+  font-style: italic;
+}
+
+/* Collapsible functionality */
+.collapsible-title {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.collapsible-title:hover {
+  background-color: var(--hover-bg);
+  border-radius: var(--border-radius);
+}
+
+.collapse-icon {
+  font-size: var(--font-size-small);
+  transition: transform 0.2s ease;
+  color: var(--secondary-text);
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.collapse-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Required board types styling */
+.board-type-label.required {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.board-type-label.required .board-type-checkbox {
+  cursor: not-allowed;
+}
+
+.required-indicator {
+  font-size: var(--font-size-small);
+  color: var(--secondary-text);
+  font-weight: normal;
+  font-style: italic;
 }

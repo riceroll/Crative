@@ -5,9 +5,13 @@ import { sizeLarge, sizeMedium, sizeSmall, gap, thickness } from '../configs/boa
  * Calculate the total size of a board array including gaps.
  * For an array of boards, total = sum(board lengths) + gap * (number_of_boards - 1)
  */
+// function getTotalSize(boards) {
+//   if (boards.length === 0) return 0;
+//   return boards.reduce((sum, b) => sum + b, 0) + gap * (boards.length - 1) - thickness * 2;
+// }
+
 function getTotalSize(boards) {
-  if (boards.length === 0) return 0;
-  return boards.reduce((sum, b) => sum + b, 0) + gap * (boards.length - 1) - thickness * 2;
+  return boards.reduce((sum, b) => sum + b, 0);
 }
 
 /**
@@ -16,6 +20,7 @@ function getTotalSize(boards) {
  * the last board with a medium board (if useMedium is true), and finally appending a given 
  * number of small boards.
  */
+
 function generateCandidateForDimension(D, useMedium = false, smallCount = 0) {
   D = D + 1e-6;
   let boards = [];

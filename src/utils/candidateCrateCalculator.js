@@ -1,7 +1,12 @@
 import { calculateFaceLayouts } from './faceLayoutsCalculator';
 import { calculateBoardSizes } from './boardSizesCalculator';
+
+
 // Import config and helpers
-import { getBoardPrice, thickness, gap } from '../configs/boardConfig';
+import { getBoardPrice, thickness, gap, boardTypes } from '../configs/boardConfig';
+
+
+
 
 // Helper to calculate total size (can likely be removed if not needed outside boardSizesCalculator)
 function getTotalSize(boards) {
@@ -10,7 +15,7 @@ function getTotalSize(boards) {
 }
 
 // Main calculation function
-export function calculateCandidateCrates(innerDims) {
+export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
     // 1. Get all potential board size combinations
     const boardSizesCandidates = calculateBoardSizes(innerDims);
 
@@ -20,7 +25,7 @@ export function calculateCandidateCrates(innerDims) {
     }
 
     // 2. Process each boardSize candidate into a full CrateDesign object
-    const candidateDesigns = boardSizesCandidates.map((bs, index) => {
+    let candidateDesigns = boardSizesCandidates.map((bs, index) => {
         // 2a. Calculate face layouts for this specific boardSize candidate
         const { faceLayouts, cubeLayouts } = calculateFaceLayouts(bs);
 
@@ -85,6 +90,19 @@ export function calculateCandidateCrates(innerDims) {
     // 3. Select specific candidates based on criteria
     if (candidateDesigns.length === 0) return []; // Handle case where no designs were made
 
+    // 4. Filter out candidateDesigns with boardTypes that are excluded
+
+
+    candidateDesigns = candidateDesigns.filter(candidate =>
+        !Object.keys(candidate.boardTypeCounts).some(type => boardTypesToExclude.includes(type))
+    );
+
+    // if after filtering, there are no candidate designs left, return empty array
+    if (candidateDesigns.length === 0) {
+        console.warn("All candidate designs were excluded due to board type restrictions.");
+        return [];
+    }
+    
 
 
     // Assign ranks based on the metrics to each candidate

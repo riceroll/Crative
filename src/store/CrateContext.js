@@ -15,14 +15,19 @@ export function CrateProvider({ children }) {
   const [useInch, setUseInch] = useState(true);
   const [assemblyProgress, setAssemblyProgress] = useState(1.0);
   const [focusPosition, setFocusPosition] = useState([0, 0, 0]);
+  const [boardTypesToExclude, setBoardTypesToExclude] = useState([
+    'board_24x5',
+    'board_24x24',
+    'board_40x24'
+  ]);
 
-  // Recompute candidate crates whenever innerDims change
+  // Recompute candidate crates whenever innerDims or boardTypesToExclude change
   useEffect(() => {
-    const candidates = calculateCandidateCrates(innerDims);
+    const candidates = calculateCandidateCrates(innerDims, boardTypesToExclude);
     setCandidateCrates(candidates);
     // Select the first candidate by default if available
     setSelectedCandidateId( (selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId) ? candidates[0]?.id : selectedCandidateId );
-  }, [innerDims, visualizeBoardTypes]);
+  }, [innerDims, boardTypesToExclude, visualizeBoardTypes]);
 
   const selectedCandidate = candidateCrates.find(c => c.id === selectedCandidateId) || null;
 
@@ -60,7 +65,9 @@ export function CrateProvider({ children }) {
         assemblyProgress,
         setAssemblyProgress,
         focusPosition,
-        setFocusPosition
+        setFocusPosition,
+        boardTypesToExclude, // <-- Expose board exclusion state
+        setBoardTypesToExclude // <-- Expose board exclusion setter
       }}
     >
       {children}
