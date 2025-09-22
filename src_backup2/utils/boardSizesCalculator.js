@@ -33,7 +33,7 @@ function generateCandidateForDimension(D, useMedium = false, smallCount = 0) {
 
     // Try tweaking the candidate:
     // If we want to use a medium board and it fits, add it.
-    if (useMedium && getTotalSize(boards) + sizeMedium <= D) {
+    if (useMedium) {
         boards.push(sizeMedium);
     }
 

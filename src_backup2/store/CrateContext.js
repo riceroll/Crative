@@ -6,7 +6,7 @@ export const CrateContext = createContext(null);
 
 export function CrateProvider({ children }) {
   // Rename dims to innerDims to indicate these dimensions belong to the target object
-  const [innerDims, setInnerDims] = useState({ width: 40, height: 40, depth: 40 });
+  const [innerDims, setInnerDims] = useState({ width: 80, height: 49.5, depth: 40 });
   const [displayDims, setDisplayDims] = useState({ width: '40', height: '40', depth: '40' });
 
   const [candidateCrates, setCandidateCrates] = useState([]);
@@ -23,20 +23,11 @@ export function CrateProvider({ children }) {
 
   // Recompute candidate crates whenever innerDims or boardTypesToExclude change
   useEffect(() => {
-    // Calculate new candidate crates
     const candidates = calculateCandidateCrates(innerDims, boardTypesToExclude);
-
-    // Update the candidate crates state
     setCandidateCrates(candidates);
-
     // Select the first candidate by default if available
     setSelectedCandidateId( (selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId) ? candidates[0]?.id : selectedCandidateId );
-
   }, [innerDims, boardTypesToExclude, visualizeBoardTypes]);
-
-  // useEffect(() => {
-  //   setAssemblyProgress(1.0);
-  // }, [selectedCandidateId]);
 
   const selectedCandidate = candidateCrates.find(c => c.id === selectedCandidateId) || null;
 

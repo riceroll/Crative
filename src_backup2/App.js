@@ -7,7 +7,6 @@ import ComponentList from './components/GUI/ComponentList'
 import ProgressSlider from './components/GUI/ProgressSlider'
 import SceneGraphTester from './components/SceneGraphTester'
 import { DevThreeDView } from './components/NewThreeDView'
-import { ProdThreeDView } from './components/NewThreeDView'
 import './App.css'
 
 export default function App() {
@@ -17,7 +16,7 @@ export default function App() {
 
   if (isDevelopment && useSceneGraphTester) {
     // Use the comprehensive testing interface during development
-    // return <SceneGraphTester />
+    return <SceneGraphTester />
   }
 
   // Regular app layout with new scene graph system
@@ -32,7 +31,7 @@ export default function App() {
         <ProgressSlider />
       </div>
       <div style={{ flex: 1 }}>
-        {isDevelopment ? <DevThreeDView /> : <ProdThreeDView />}
+        <DevThreeDView />
       </div>
     </div>
   )

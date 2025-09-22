@@ -4,7 +4,6 @@ import OptionCard from './OptionCard'
 
 export default function OptionsList() {
   const { candidateCrates, selectedCandidateId, setSelectedCandidateId } = useContext(CrateContext)
-  const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext)
   
   return (
     <div
@@ -18,10 +17,7 @@ export default function OptionsList() {
           key={opt.id}
           option={opt}
           selected={opt.id === selectedCandidateId}
-          onSelect={() => {
-            setSelectedCandidateId(opt.id);
-            setAssemblyProgress(1.0);
-          }}
+          onSelect={() => setSelectedCandidateId(opt.id)}
         />
       ))}
     </div>
