@@ -12,6 +12,13 @@ export const cubeColor = "#F6D33C";
 
 export const defaultColor = '#555'; // Default color for boards
 
+export const screwColor = '#888'; // Color for screws
+
+export const stickColor = '#A0522D'; // Color for sticks
+
+export const pieceColor = '#D2B48C'; // Color for pieces
+
 export const assemblyDisplacement = 50;
 
 export const assemblyDisplacementCube = assemblyDisplacement * 0.15; // Smaller displacement for cubes
+
