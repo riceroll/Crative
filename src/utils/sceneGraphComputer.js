@@ -21,7 +21,7 @@ class DebugLogger {
         data: JSON.parse(JSON.stringify(data)) // Deep clone for safety
       };
       this.logs.push(logEntry);
-      console.log(`[SceneGraph] ${step}:`, data);
+      // console.log(`[SceneGraph] ${step}:`, data);
     }
   }
 
@@ -55,7 +55,7 @@ export function computeSceneGraph(selectedCandidate) {
     outerDims: selectedCandidate?.outerDims 
   });
 
-  if (!selectedCandidate || !selectedCandidate.faceLayouts || !selectedCandidate.cubeLayouts) {
+  if (!selectedCandidate || !selectedCandidate.faceLayouts || !selectedCandidate.cubeLayouts || !selectedCandidate.screwLayouts) {
     debugLogger.log('computeSceneGraph_error', 'Invalid selectedCandidate provided');
     return {};
   }
@@ -83,10 +83,15 @@ export function computeSceneGraph(selectedCandidate) {
   const cubeChildren = generateCubeParts(selectedCandidate.cubeLayouts, sceneGraph);
   sceneGraph['crate_root'].properties.children.push(...cubeChildren);
 
+  // Generate screw parts
+  const screwChildren = generateScrewParts(selectedCandidate.screwLayouts, sceneGraph);
+  sceneGraph['crate_root'].properties.children.push(...screwChildren);
+
   debugLogger.log('computeSceneGraph_complete', {
     totalParts: Object.keys(sceneGraph).length,
     faceChildren: faceChildren.length,
-    cubeChildren: cubeChildren.length
+    cubeChildren: cubeChildren.length,
+    screwChildren: screwChildren.length
   });
 
   return sceneGraph;
@@ -125,8 +130,23 @@ function generateFaceParts(faceLayouts, sceneGraph) {
 
     // Generate strip parts for this face
     const stripChildren = generateStripParts(faceData.boards, faceId, faceName, sceneGraph);
-
     sceneGraph[faceId].properties.children.push(...stripChildren);
+
+    // Generate cube parts for inner corners of this face, directly using faceData.cubes
+    const cubeChildren = generateInFaceCubeParts(faceData.cubes, faceId, faceName, sceneGraph);
+    sceneGraph[faceId].properties.children.push(...cubeChildren);
+
+    // Generate piece parts for this face
+    const pieceChildren = generatePieceParts(faceData.pieces, faceId, faceName, sceneGraph);
+    sceneGraph[faceId].properties.children.push(...pieceChildren);
+
+    // Generate bar parts for this face
+    const barChildren = generateBarParts(faceData.bars, faceId, faceName, sceneGraph);
+    sceneGraph[faceId].properties.children.push(...barChildren);
+
+    // Generate screw parts for this face
+    const screwChildren = generateInFaceScrewParts(faceData.screws, faceId, faceName, sceneGraph);
+    sceneGraph[faceId].properties.children.push(...screwChildren);
 
     debugLogger.log('generateFaceParts_face', {
       faceId,
@@ -202,6 +222,136 @@ function generateStripParts(boards, faceId, faceName, sceneGraph) {
   });
 
   return stripChildren;
+}
+
+/**
+ * Generate cube parts for inner corners of a face
+ * @param {Array} cubes - Array of cube data from face
+ * @param {string} faceId - Parent face ID
+ * @param {string} faceName - Face name (front, back, etc.)
+ * @param {Object} sceneGraph - Scene graph being built
+ * @returns {Array} Array of cube part IDs
+ */
+function generateInFaceCubeParts(cubes, faceId, faceName, sceneGraph) {
+  const cubeChildren = [];
+
+  cubes.forEach((cube, index) => {
+    // example naming for strip:     const stripId = `${faceId}_strip_${stripIndex}`;
+    const cubeId = `${faceId}_cube_${index}`;
+
+    cubeChildren.push(cubeId);
+
+    sceneGraph[cubeId] = {
+      part_id: cubeId,
+      properties: {
+        current_state: { rel_pos: [0, 0, 0], rel_rot: [0, 0, 0], alpha: 1 },
+        type: 'model',
+        model_id: 'cube',
+        pos: cube.final_position,
+        rot: cube.final_rotation,
+        children: [],
+        keyframes: generateCubeKeyframes(cubeId, cube)
+      }
+    };
+  });
+
+  return cubeChildren;
+}
+
+/**
+ * Generate screw parts for a face
+ * @param {Array} screws - Array of screw data from face
+ * @param {string} faceId - Parent face ID
+ * @param {string} faceName - Face name (front, back, etc.)
+ * @param {Object} sceneGraph - Scene graph being built
+ * @returns {Array} Array of screw part IDs
+ */
+function generateInFaceScrewParts(screws, faceId, faceName, sceneGraph) {
+  const screwChildren = [];
+
+  screws.forEach((screw, index) => {
+    const screwId = `${faceId}_screw_${index}`;
+    screwChildren.push(screwId);
+
+    sceneGraph[screwId] = {
+      part_id: screwId,
+      properties: {
+        current_state: { rel_pos: [0, 0, 0], rel_rot: [0, 0, 0], alpha: 1 },
+        type: 'model',
+        model_id: 'screw',
+        pos: screw.final_position,
+        rot: screw.final_rotation,
+        children: [],
+        keyframes: generateScrewKeyframes(screwId, screw)
+      }
+    };
+  });
+
+  return screwChildren;
+}
+
+/**
+ * Generate piece parts for a face
+ * @param {Array} pieces - Array of piece data from face
+ * @param {string} faceId - Parent face ID
+ * @param {string} faceName - Face name (front, back, etc.)
+ * @param {Object} sceneGraph - Scene graph being built
+ * @returns {Array} Array of piece part IDs
+ */
+function generatePieceParts(pieces, faceId, faceName, sceneGraph) {
+  const pieceChildren = [];
+
+  pieces.forEach((piece, index) => {
+    const pieceId = `${faceId}_piece_${index}`;
+    pieceChildren.push(pieceId);
+
+    sceneGraph[pieceId] = {
+      part_id: pieceId,
+      properties: {
+        current_state: { rel_pos: [0, 0, 0], rel_rot: [0, 0, 0], alpha: 1 },
+        type: 'model',
+        model_id: 'piece',
+        pos: piece.final_position,
+        rot: piece.final_rotation,
+        children: [],
+        keyframes: generatePieceKeyframes(pieceId, piece)
+      }
+    };
+  });
+
+  return pieceChildren;
+}
+
+/**
+ * Generate bar parts for a face
+ * @param {Array} bars - Array of bar data from face
+ * @param {string} faceId - Parent face ID
+ * @param {string} faceName - Face name (front, back, etc.)
+ * @param {Object} sceneGraph - Scene graph being built
+ * @returns {Array} Array of bar part IDs
+ */
+function generateBarParts(bars, faceId, faceName, sceneGraph) {
+  const barChildren = [];
+
+  bars.forEach((bar, index) => {
+    const barId = `${faceId}_bar_${index}`;
+    barChildren.push(barId);
+
+    sceneGraph[barId] = {
+      part_id: barId,
+      properties: {
+        current_state: { rel_pos: [0, 0, 0], rel_rot: [0, 0, 0], alpha: 1 },
+        type: 'model',
+        model_id: 'bar',
+        pos: bar.final_position,
+        rot: bar.final_rotation,
+        children: [],
+        keyframes: generateBarKeyframes(barId, bar)
+      }
+    };
+  });
+
+  return barChildren;
 }
 
 /**
@@ -316,6 +466,66 @@ function generateCubeParts(cubeLayouts, sceneGraph) {
 }
 
 /**
+ * Generate screw parts from screwLayouts
+ * @param {Object} screwLayouts - Screw layouts from selectedCandidate
+ * @param {Object} sceneGraph - Scene graph being built
+ * @returns {Array} Array of screw part IDs
+ */
+function generateScrewParts(screwLayouts, sceneGraph) {
+  debugLogger.log('generateScrewParts_start', {
+    cornerScrews: screwLayouts.cornerScrews?.length || 0,
+    edgeScrews: screwLayouts.edgeScrews?.length || 0
+  });
+
+  const screwChildren = [];
+
+  // Generate corner screws
+  if (screwLayouts.cornerScrews) {
+    screwLayouts.cornerScrews.forEach((screw, index) => {
+      const screwId = `screw_corner_${index}`;
+      screwChildren.push(screwId);
+
+      sceneGraph[screwId] = {
+        part_id: screwId,
+        properties: {
+          current_state: { rel_pos: [0, 0, 0], rel_rot: [0, 0, 0], alpha: 1 },
+          type: 'model',
+          model_id: 'screw',
+          pos: screw.final_position,
+          rot: screw.final_rotation,
+          children: [],
+          keyframes: generateScrewKeyframes(screwId, screw)
+        }
+      };
+    });
+  }
+
+  // Generate edge screws
+  if (screwLayouts.edgeScrews) {
+    screwLayouts.edgeScrews.forEach((screw, index) => {
+      const screwId = `screw_edge_${index}`;
+      screwChildren.push(screwId);
+
+      sceneGraph[screwId] = {
+        part_id: screwId,
+        properties: {
+          current_state: { rel_pos: [0, 0, 0], rel_rot: [0, 0, 0], alpha: 1 },
+          type: 'model',
+          model_id: 'screw',
+          pos: screw.final_position,
+          rot: screw.final_rotation,
+          children: [],
+          keyframes: generateScrewKeyframes(screwId, screw)
+        }
+      };
+    });
+  }
+
+  debugLogger.log('generateScrewParts_complete', { totalScrews: screwChildren.length });
+  return screwChildren;
+}
+
+/**
  * Generate keyframes for face animation
  * @param {string} faceId - Face part ID
  * @param {Object} faceData - Face data from faceLayouts
@@ -327,6 +537,13 @@ function generateFaceKeyframes(faceId, faceData, assemblyDisplacement) {
       keyframe_id: `${faceId}_flat`,
       pos: calculateRelativePosition(faceData.flat_position, faceData.final_position),
       rot: calculateRelativeRotation(faceData.flat_rotation, faceData.final_rotation),
+      alpha: 1,
+      duration: 0.1
+    },
+    {
+      keyframe_id: `${faceId}_flipped`,
+      pos: calculateRelativePosition(faceData.flipped_position, faceData.final_position),
+      rot: calculateRelativeRotation(faceData.flipped_rotation, faceData.final_rotation),
       alpha: 1,
       duration: 0.1
     },
@@ -397,6 +614,81 @@ function generateCubeKeyframes(cubeId, cube) {
     },
     {
       keyframe_id: `${cubeId}_final`,
+      pos: [0, 0, 0],
+      rot: [0, 0, 0],
+      alpha: 1,
+      duration: null
+    }
+  ];
+}
+
+/**
+ * Generate keyframes for screw animation
+ * @param {string} screwId - Screw part ID
+ * @param {Object} screw - Screw data
+ * @returns {Array} Array of keyframes
+ */
+function generateScrewKeyframes(screwId, screw) {
+  return [
+    {
+      keyframe_id: `${screwId}_initial`,
+      pos: calculateRelativePosition(screw.initial_position, screw.final_position),
+      rot: calculateRelativeRotation(screw.initial_rotation, screw.final_rotation),
+      alpha: 0,
+      duration: 0.2
+    },
+    {
+      keyframe_id: `${screwId}_final`,
+      pos: [0, 0, 0],
+      rot: [0, 0, 0],
+      alpha: 1,
+      duration: null
+    }
+  ];
+}
+
+/**
+ * Generate keyframes for piece animation
+ * @param {string} pieceId - Piece part ID
+ * @param {Object} piece - Piece data
+ * @returns {Array} Array of keyframes
+ */
+function generatePieceKeyframes(pieceId, piece) {
+  return [
+    {
+      keyframe_id: `${pieceId}_initial`,
+      pos: calculateRelativePosition(piece.initial_position, piece.final_position),
+      rot: calculateRelativeRotation(piece.initial_rotation, piece.final_rotation),
+      alpha: 0,
+      duration: 0.2
+    },
+    {
+      keyframe_id: `${pieceId}_final`,
+      pos: [0, 0, 0],
+      rot: [0, 0, 0],
+      alpha: 1,
+      duration: null
+    }
+  ];
+}
+
+/**
+ * Generate keyframes for bar animation
+ * @param {string} barId - Bar part ID
+ * @param {Object} bar - Bar data
+ * @returns {Array} Array of keyframes
+ */
+function generateBarKeyframes(barId, bar) {
+  return [
+    {
+      keyframe_id: `${barId}_initial`,
+      pos: calculateRelativePosition(bar.initial_position, bar.final_position),
+      rot: calculateRelativeRotation(bar.initial_rotation, bar.final_rotation),
+      alpha: 0,
+      duration: 0.2
+    },
+    {
+      keyframe_id: `${barId}_final`,
       pos: [0, 0, 0],
       rot: [0, 0, 0],
       alpha: 1,
@@ -491,13 +783,15 @@ function calculateStripCenterPosition(stripBoards) {
  * @returns {Array} Perpendicular direction [x, y, z]
  */
 function calculateStripPerpendicularDirection(stripBoards, faceName) {
-  if (stripBoards.length < 2) {
+  return [1, 0, 0]; // Default perpendicular direction for simplicity
+
+  if ( (stripBoards.length < 2) || 1) {
     // Default perpendicular directions for each face
     const defaultDirections = {
       front: [1, 0, 0],   // X direction
       back: [1, 0, 0],    // X direction
-      left: [0, 0, 1],    // Z direction
-      right: [0, 0, 1],   // Z direction
+      left: [1, 0, 0],    // Y direction
+      right: [1, 0, 0],   // Y direction
       top: [1, 0, 0],     // X direction
       bottom: [1, 0, 0]   // X direction
     };
@@ -535,8 +829,8 @@ function calculateStripPerpendicularDirection(stripBoards, faceName) {
   // If strip is primarily in X direction, perpendicular is Z
   // If strip is primarily in Z direction, perpendicular is X
   if (Math.abs(normalizedStrip[0]) > Math.abs(normalizedStrip[2])) {
-    // Strip is more X-oriented, perpendicular is Z
-    return [0, 0, 1];
+    // Strip is more X-oriented, perpendicular is Y
+    return [0, 1, 0];
   } else {
     // Strip is more Z-oriented, perpendicular is X
     return [1, 0, 0];

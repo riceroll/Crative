@@ -6,10 +6,12 @@ export default function InputForm() {
   const { innerDims, setInnerDims } = useContext(CrateContext);
   const { displayDims, setDisplayDims } = useContext(CrateContext);
   const {useInch, toggleUseInch} = useContext(CrateContext);
+  const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDisplayDims((prev) => ({ ...prev, [name]: value }));
+    setAssemblyProgress(1.0);
   };
 
 

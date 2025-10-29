@@ -10,82 +10,101 @@ export function createMotionSequence(sceneGraph) {
   const motions = [];
   let cumulativeDuration = 0;
 
-  // Define animation phases and their order
-  const animationPhases = [
+  const faceOrder = ['bottom', 'front', 'back', 'left', 'right', 'top'];
 
-    { phase: 'board_appear', pattern: /board_.*_appear$/, duration: 0.4 },
+  const phaseMotions = [];
 
-    { phase: 'strip_displaced', pattern: /face_.*_strip_.*_displaced$/, duration: 0.3 },
-
-    { phase: 'face_flat', pattern: /face_.*_flat$/, duration: 0.1 },
-    
-    { phase: 'face_initial', pattern: /face_.*_initial$/, duration: 0.1 },
-
-    { phase: 'cube_initial', pattern: /cube_.*_initial$/, duration: 0.2 },
-
-
-  ];
-
-  // Process each animation phase
-  animationPhases.forEach(phaseConfig => {
-    const phaseMotions = [];
-    
-    // Collect all keyframes matching this phase
+  // Helper function to collect keyframes matching a pattern
+  function collectKeyframesMatchingPattern(pattern) {
     Object.values(sceneGraph).forEach(part => {
       if (part.properties.keyframes) {
         part.properties.keyframes.forEach(keyframe => {
-          if (phaseConfig.pattern.test(keyframe.keyframe_id)) {
+          if (pattern.test(keyframe.keyframe_id)) {
             phaseMotions.push({
               keyframe_id: keyframe.keyframe_id,
               part_id: part.part_id,
-              keyframe: keyframe,
-              phase: phaseConfig.phase
+              keyframe: keyframe
             });
           }
         });
       }
     });
+  }
 
-    // Sort motions within phase (e.g., by face order, board order)
-    // phaseMotions.sort((a, b) => {
-    //   // Custom sorting logic for different phases
-    //   if (phaseConfig.phase.startsWith('face_')) {
-    //     return sortFaceMotions(a, b);
-    //   } else if (phaseConfig.phase.startsWith('board_')) {
-    //     return sortBoardMotions(a, b);
-    //   } else if (phaseConfig.phase.startsWith('cube_')) {
-    //     return sortCubeMotions(a, b);
-    //   }
-    //   return 0;
-    // });
+  for (const faceName of faceOrder) {
+    // board appear phase
+    let pattern = new RegExp(`face_${faceName}_strip_\\d+_board_\\d+_\\d+_appear$`);
+    collectKeyframesMatchingPattern(pattern);
 
-    // Add motions to sequence with timing
-    phaseMotions.forEach((motion, index) => {
-      const startTime = cumulativeDuration;
-      const duration = motion.keyframe.duration;
-      const endTime = startTime + duration;
+    // strip displaced phase
+    pattern = new RegExp(`face_${faceName}_strip_\\d+_displaced$`);
+    collectKeyframesMatchingPattern(pattern);
 
-      motions.push({
-        ...motion,
-        startTime,
-        duration,
-        endTime,
-        index: motions.length
-      });
+    // in-face piece initial phase
+    pattern = new RegExp(`face_${faceName}_piece_\\d+_initial$`);
+    collectKeyframesMatchingPattern(pattern);
 
-      // For staggered animations, add small delays between items
-    //   if (phaseConfig.phase === 'board_appear') {
-    //     cumulativeDuration += duration * 0.1; // 10% overlap
-    //   } else {
-        cumulativeDuration = Math.max(cumulativeDuration, endTime);
-    //   }
+    // in-face bar initial phase
+    pattern = new RegExp(`face_${faceName}_bar_\\d+_initial$`);
+    collectKeyframesMatchingPattern(pattern);
+
+    // face flat phase
+    pattern = new RegExp(`^face_${faceName}_flat$`);
+    collectKeyframesMatchingPattern(pattern);
+
+    // face cube initial phase
+    pattern = new RegExp(`face_${faceName}_cube_\\d+_initial$`);
+    collectKeyframesMatchingPattern(pattern);
+
+    // face screw initial phase
+    pattern = new RegExp(`face_${faceName}_screw_\\d+_initial$`);
+    collectKeyframesMatchingPattern(pattern);
+
+  }
+
+  for ( const faceName of faceOrder) {
+
+    if (faceName === 'bottom') {
+      continue; // Skip bottom face for flipped and initial phases
+    }
+
+    // face flipped phase
+    let pattern = new RegExp(`face_${faceName}_flipped$`);
+    collectKeyframesMatchingPattern(pattern);
+
+    // face initial phase
+    pattern = new RegExp(`^face_${faceName}_initial$`);
+    collectKeyframesMatchingPattern(pattern);
+  }
+
+  // cube initial phase
+  let pattern = /^cube_(corner|edge)_\d+_initial$/;
+  collectKeyframesMatchingPattern(pattern);
+
+  // screw initial phase
+  pattern = /^screw_(corner|edge)_\d+_initial$/;
+  collectKeyframesMatchingPattern(pattern);
+
+  // Add motions to sequence with timing
+  phaseMotions.forEach((motion, index) => {
+    const startTime = cumulativeDuration;
+    const duration = motion.keyframe.duration;
+    const endTime = startTime + duration;
+
+    motions.push({
+      ...motion,
+      startTime,
+      duration,
+      endTime,
+      index: motions.length
     });
+
+    cumulativeDuration = Math.max(cumulativeDuration, endTime);
   });
 
   return {
     motions,
-    totalDuration: cumulativeDuration,
-    phaseCount: animationPhases.length
+    totalDuration: cumulativeDuration
   };
 }
 
@@ -110,7 +129,7 @@ export function updateCurrentStates(sceneGraph, globalProgress, motionSequence) 
     
     // Pass 1: Forward - apply only completed motions (progress = 1.0)
     motionSequence.motions.forEach(motion => {
-        if (currentTime > motion.endTime) {
+        if (currentTime >= motion.endTime) {
             applyMotionToState(sceneGraph, motion, 1.0);
         }
     });

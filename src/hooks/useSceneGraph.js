@@ -82,6 +82,7 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
     try {
       const startTime = performance.now();
       const sequence = createMotionSequence(computedSceneGraph);
+      window.motionSequence = sequence; // For debugging
       const endTime = performance.now();
 
       if (enablePerformanceMonitoring) {
@@ -118,6 +119,10 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
     try {
       const startTime = performance.now();
       const updatedGraph = updateCurrentStates(sceneGraph, assemblyProgress, motionSequence);
+
+      window.sceneGraph = updatedGraph; // For debugging
+      window.motionSequence = motionSequence; // For debugging
+      
       const endTime = performance.now();
 
       if (enablePerformanceMonitoring) {

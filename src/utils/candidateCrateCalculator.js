@@ -6,8 +6,6 @@ import { calculateBoardSizes } from './boardSizesCalculator';
 import { getBoardPrice, thickness, gap, boardTypes } from '../configs/boardConfig';
 
 
-
-
 // Helper to calculate total size (can likely be removed if not needed outside boardSizesCalculator)
 function getTotalSize(boards) {
     if (!boards || boards.length === 0) return 0;
@@ -27,7 +25,7 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
     // 2. Process each boardSize candidate into a full CrateDesign object
     let candidateDesigns = boardSizesCandidates.map((bs, index) => {
         // 2a. Calculate face layouts for this specific boardSize candidate
-        const { faceLayouts, cubeLayouts } = calculateFaceLayouts(bs);
+        const { faceLayouts, cubeLayouts, screwLayouts } = calculateFaceLayouts(bs);
 
         // 2b. Calculate metrics based on faceLayouts and boardSizes
         let boardCount = 0;
@@ -51,6 +49,28 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
         const cornerCubeCount = cubeLayouts?.cornerCubes?.length || 0;
         const edgeCubeCount = cubeLayouts?.edgeCubes?.length || 0;
         const totalCubeCount = cornerCubeCount + edgeCubeCount;
+
+        // --- Calculate total screw count ---
+        const cornerScrewCount = screwLayouts?.cornerScrews?.length || 0;
+        const edgeScrewCount = screwLayouts?.edgeScrews?.length || 0;
+        const totalScrewCount = cornerScrewCount + edgeScrewCount;
+
+        // --- Calculate total bar count ---
+        let totalBarCount = 0;
+        Object.values(faceLayouts).forEach(face => {
+            if (face && face.bars) {
+                totalBarCount += face.bars.length;
+            }
+        });
+
+        // --- Calculate total piece count ---
+        let totalPieceCount = 0;
+        Object.values(faceLayouts).forEach(face => {
+            if (face && face.pieces) {
+                totalPieceCount += face.pieces.length;
+            }
+        });
+
         // --------------------------------
 
 
@@ -73,9 +93,13 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
             boardSizes: bs,
             faceLayouts: faceLayouts,
             cubeLayouts: cubeLayouts,
+            screwLayouts: screwLayouts,
             numBoards: boardCount,
             totalPrice: totalPrice,
             cubeCount: totalCubeCount,
+            screwCount: totalScrewCount,
+            pieceCount: totalPieceCount,
+            barCount: totalBarCount,
             boardTypeCounts: boardTypeCounts,
             innerVolume: innerVolume,
             internalVolume: internalVolume,

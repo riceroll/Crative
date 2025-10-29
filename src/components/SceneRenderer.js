@@ -5,6 +5,7 @@ import React, { useContext } from 'react';
 import { ModelContext } from '../store/ModelContext';
 import { CrateContext } from '../store/CrateContext';
 import { boardTypes } from '../configs/boardConfig';
+import { cubeColor, screwColor, stickColor, pieceColor} from '../configs/globalConfigs';
 
 /**
  * Main scene renderer component
@@ -172,6 +173,17 @@ function ModelRenderer({ part, models, position, rotation, alpha, visualizeBoard
         const color = visualizeBoardTypes ? boardConfig.highlightColor : boardConfig.defaultColor;
         child.material.color.set(color);
       }
+    }
+
+    // Apply special coloring for screws, sticks, pieces, cubes
+    if (modelKey.startsWith('screw')) {
+      child.material.color.set(screwColor);
+    } else if (modelKey.startsWith('stick')) {
+      child.material.color.set(stickColor);
+    } else if (modelKey.startsWith('piece')) {
+      child.material.color.set(pieceColor);
+    } else if (modelKey === 'cube') {
+      child.material.color.set(cubeColor);
     }
   }
 

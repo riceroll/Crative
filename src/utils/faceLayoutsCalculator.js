@@ -1,7 +1,7 @@
 // Import necessary config values
 import { dFdx, directPointLight } from 'three/tsl';
 import { gap, thickness, boardTypes } from '../configs/boardConfig';
-import { assemblyDisplacementCube } from '../configs/globalConfigs';
+import { assemblyDisplacementCube, cubeDisplacement, pieceDisplacement, assemblyDisplacement, screwOnCubeDisplacement } from '../configs/globalConfigs';
 
 // Helper function: lay out boards, now returning type information
 // Needs refinement based on how board types are determined from sizesA/sizesB
@@ -49,6 +49,8 @@ function computeBoards(sizesA, sizesB) {
                 ],
                 id_0: i,
                 id_1: j,
+                max_0: sizesA.length - 1,
+                max_1: sizesB.length - 1,
                 width: finalSizeA,
                 height: finalSizeB,
                 rotation: boardRotation // Apply rotation if dimensions were swapped.
@@ -66,12 +68,254 @@ function computeBoards(sizesA, sizesB) {
     return boards;
 }
 
+// Helper function: calculate cube positions for inner corners of a face
+function calculateInFaceCubePositions(boards) {
+  let positions = [];
+
+  // get all the unique corner positions
+  const cornerSet = new Set();
+  const cornerDict = {};
+
+  boards.forEach(board => {
+    let width = board.width;
+    let height = board.height;
+
+    if (board.rotation[0] === 0 && board.rotation[1] === 0 && board.rotation[2] === 0) {
+      width = board.width;
+      height = board.height;
+    } else {
+      width = board.height;
+      height = board.width;
+    }
+
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // Calculate corner positions relative to face, considering half gap size
+    const corners = [
+      [board.position[0] - halfWidth - gap / 2, board.position[1] - halfHeight - gap / 2, cubeDisplacement], // Bottom-left
+      [board.position[0] + halfWidth + gap / 2, board.position[1] - halfHeight - gap / 2, cubeDisplacement], // Bottom-right
+      [board.position[0] + halfWidth + gap / 2, board.position[1] + halfHeight + gap / 2, cubeDisplacement], // Top-right
+      [board.position[0] - halfWidth - gap / 2, board.position[1] + halfHeight + gap / 2, cubeDisplacement]  // Top-left
+    ];
+
+    corners.forEach(corner => {
+      const key = corner.join(',');
+      if (!cornerDict[key]) {
+        cornerDict[key] = corner;
+        positions.push(corner);
+      }
+    });
+  });
+
+  // Keep unique corners only
+  positions = Object.values(cornerDict);
+
+  // remove corners that are on the outer edges (i.e., have x or y equal to min/max)
+  const xs = positions.map(p => p[0]);
+  const ys = positions.map(p => p[1]);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  positions = positions.filter(p => p[0] !== minX && p[0] !== maxX && p[1] !== minY && p[1] !== maxY);
+  
+  return positions;
+}
+
+
+// Helper function: calculate piece positions for inner areas of a face
+function calculatePiecePositions(boards) {
+  
+  let positions = [];
+
+  // get all the unique corner positions
+  const cornerSet = new Set();
+  const cornerDict = {};
+
+  boards.forEach(board => {
+    let width = board.width;
+    let height = board.height;
+    
+    if (board.rotation[0] === 0 && board.rotation[1] === 0 && board.rotation[2] === 0) {
+      width = board.width;
+      height = board.height;
+    } else {
+      width = board.height;
+      height = board.width;
+    }
+
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // Calculate corner positions relative to face, considering half gap size
+    const corners = [
+      [board.position[0] - halfWidth - gap / 2, board.position[1] - halfHeight - gap / 2, pieceDisplacement], // Bottom-left
+      [board.position[0] + halfWidth + gap / 2, board.position[1] - halfHeight - gap / 2, pieceDisplacement], // Bottom-right
+      [board.position[0] + halfWidth + gap / 2, board.position[1] + halfHeight + gap / 2, pieceDisplacement], // Top-right
+      [board.position[0] - halfWidth - gap / 2, board.position[1] + halfHeight + gap / 2, pieceDisplacement]  // Top-left
+    ];
+
+    corners.forEach(corner => {
+      const key = corner.join(',');
+      if (!cornerDict[key]) {
+        cornerDict[key] = corner;
+        positions.push(corner);
+      }
+    });
+  });
+
+  // Keep unique corners only
+  positions = Object.values(cornerDict);
+
+  // remove corners that are on the outer edges (i.e., have x or y equal to min/max)
+  const xs = positions.map(p => p[0]);
+  const ys = positions.map(p => p[1]);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  positions = positions.filter(p => p[0] !== minX && p[0] !== maxX && p[1] !== minY && p[1] !== maxY);
+  
+  return positions;
+}
+
+// Helper function: calculate bar positions and rotations for edges between boards
+function calculateBarPositionsRotations(boards) {
+
+  const initPos = [];
+  const initRot = [];
+  const finalPos = [];
+  const finalRot = [];
+
+  // for all the boards that are not the last in their column, and their size is 40
+  // create bar on their right edge
+  boards.forEach(board => {
+    let width = board.width;
+    if (board.rotation[0] === 0 && board.rotation[1] === 0 && board.rotation[2] === 0) {
+      width = board.width;
+    } else {
+      width = board.height;
+    }
+
+    let height = board.height;
+    if (board.rotation[0] === 0 && board.rotation[1] === 0 && board.rotation[2] === 0) {
+      height = board.height;
+    } else {
+      height = board.width;
+    }
+
+    if (board.id_0 < board.max_0 && height === 40) {
+      const barPosition = [board.position[0] + width / 2 + gap / 2, board.position[1], board.position[2] + gap / 2];
+      const barRotation = [ Math.PI / 2, 0, 0];
+
+      let displacement = assemblyDisplacement;
+
+      // if board.id_0 is smaller than half of max_0, negate displacement on Y axis
+      if (board.id_1 == 0) {
+        displacement = -displacement;
+      }
+
+      const barInitPosition = [barPosition[0], barPosition[1] + displacement, barPosition[2]];
+      initPos.push(barInitPosition);
+      initRot.push(barRotation);
+      finalPos.push(barPosition);
+      finalRot.push(barRotation);
+    }
+  });
+
+  // for all the boards that are not the last in their row, and their size is 40
+  // create bar on their bottom edge
+  boards.forEach(board => {
+    // if board rotation all 0, width is width, otherwise width is height
+    let width = board.width;
+    if (board.rotation[0] === 0 && board.rotation[1] === 0 && board.rotation[2] === 0) {
+      width = board.width;
+    } else {
+      width = board.height;
+    }
+
+    let height = board.height;
+    if (board.rotation[0] === 0 && board.rotation[1] === 0 && board.rotation[2] === 0) {
+      height = board.height;
+    } else {
+      height = board.width;
+    }
+
+    if (board.id_1 < board.max_1 && width === 40) {
+      const barPosition = [board.position[0], board.position[1] + height / 2 + gap / 2, board.position[2] + gap / 2];
+      const barRotation = [0, Math.PI / 2, 0];
+
+      let displacement = assemblyDisplacement;
+
+      // if board.id_1 is smaller than half of max_1, negate displacement on X axis
+      if (board.id_0 == 0) {
+        displacement = -displacement;
+      }
+
+      const barInitPosition = [barPosition[0] + displacement, barPosition[1], barPosition[2]];
+      initPos.push(barInitPosition);
+      initRot.push(barRotation);
+      finalPos.push(barPosition);
+      finalRot.push(barRotation);
+    }
+  });
+
+  return { initPos, initRot, finalPos, finalRot };
+}
+
+// Helper function: calculate cubes, with initial and final positions/rotations
+function calculateCubes(boards) {
+  const inFacePositions = calculateInFaceCubePositions(boards);
+  const cubes = [];
+  inFacePositions.forEach(pos => {
+    cubes.push({
+      final_position: pos,
+      final_rotation: [Math.PI, 0, 0],
+      initial_position: [pos[0], pos[1], pos[2] - assemblyDisplacementCube],
+      initial_rotation: [Math.PI, 0, 0]
+    });
+  });
+  return cubes;
+}
+
+// Helper function: calculate pieces, with initial and final positions/rotations
+function calculatePieces(boards) {
+  const piecePositions = calculatePiecePositions(boards);
+  const pieces = [];
+  piecePositions.forEach(pos => {
+    pieces.push({
+      final_position: pos,
+      final_rotation: [0, 0, 0],
+      initial_position: [pos[0], pos[1], pos[2] + assemblyDisplacementCube],
+      initial_rotation: [0, 0, 0]
+    });
+  });
+  return pieces;
+}
+
+// Helper function: calculate bars for edges between boards with size 40
+function calculateBars(boards) {
+  const { initPos, initRot, finalPos, finalRot } = calculateBarPositionsRotations(boards);
+  const bars = [];
+  finalPos.forEach((pos, index) => {
+    bars.push({
+      final_position: pos,
+      final_rotation: finalRot[index],
+      initial_position: initPos[index],
+      initial_rotation: initRot[index]
+    });
+  });
+  return bars;
+}
+
+
 function calculateCubePositions(halfWidth, halfHeight, halfDepth, boardSizes) {
 
   // adjust sizes with half thickness
-  const halfWidthWithOffset = halfWidth + thickness / 2;
-  const halfHeightWithOffset = halfHeight + thickness / 2;
-  const halfDepthWithOffset = halfDepth + thickness / 2;
+  const halfWidthWithOffset = halfWidth + cubeDisplacement;
+  const halfHeightWithOffset = halfHeight + cubeDisplacement;
+  const halfDepthWithOffset = halfDepth + cubeDisplacement;
 
   // Calculate all 8 corner positions
   const cornerCubePositions = [
@@ -259,36 +503,48 @@ export function calculateFaceLayouts(boardSizes) {
   const frontPos = [0, 0, halfD];
   const frontRot = [0, 0, 0];
   const frontInitialPos = [0, 0, halfD + assemblyDisplacementAdjusted];
+  const frontFlippedPos = [0, -halfH, halfD + assemblyDisplacementAdjusted];
+  const frontFlippedRot = [Math.PI / 2, 0, 0];
   const frontFlatPos = [0, -halfH, halfD + assemblyDisplacementAdjusted];
   const frontFlatRot = [-Math.PI / 2, 0, 0];
 
   const backPos = [0, 0, -halfD];
   const backRot = [0, Math.PI, 0];
   const backInitialPos = [0, 0, -halfD - assemblyDisplacementAdjusted];
+  const backFlippedPos = [0, -halfH, -halfD - assemblyDisplacementAdjusted];
+  const backFlippedRot = [-Math.PI / 2, Math.PI, 0];
   const backFlatPos = [0, -halfH, -halfD - assemblyDisplacementAdjusted];
   const backFlatRot = [Math.PI / 2, Math.PI, 0];
 
   const leftPos = [-halfW, 0, 0];
   const leftRot = [-Math.PI/2 , -Math.PI / 2, -Math.PI / 2];
   const leftInitialPos = [-halfW - assemblyDisplacementAdjusted, 0, 0];
+  const leftFlippedPos = [-halfW - assemblyDisplacementAdjusted, -halfH, 0];
+  const leftFlippedRot = [Math.PI/2 , 0, -Math.PI / 2];
   const leftFlatPos = [-halfW - assemblyDisplacementAdjusted, -halfH, 0];
   const leftFlatRot = [-Math.PI/2 , 0, -Math.PI / 2];
 
   const rightPos = [halfW, 0, 0];
   const rightRot = [-Math.PI / 2, Math.PI / 2, Math.PI / 2];
   const rightInitialPos = [halfW + assemblyDisplacementAdjusted, 0, 0];
+  const rightFlippedPos = [halfW + assemblyDisplacementAdjusted, -halfH, 0];
+  const rightFlippedRot = [Math.PI / 2, 0, Math.PI / 2];
   const rightFlatPos = [halfW + assemblyDisplacementAdjusted, -halfH, 0];
   const rightFlatRot = [-Math.PI / 2, 0, Math.PI / 2];
 
   const topPos = [0, halfH, 0];
   const topRot = [-Math.PI / 2, 0, 0];
   const topInitialPos = [0, halfH + assemblyDisplacementAdjusted, 0];
-  const topFlatPos = [rightFlatPos[0], -halfH, 0];
+  const topFlippedPos = [halfW * 2 + assemblyDisplacementAdjusted, -halfH, halfD * 2 + assemblyDisplacementAdjusted];
+  const topFlippedRot = [Math.PI / 2, 0, 0];
+  const topFlatPos = [halfW * 2 + assemblyDisplacementAdjusted, -halfH, halfD * 2 + assemblyDisplacementAdjusted];
   const topFlatRot = [-Math.PI / 2, 0, 0];
 
   const bottomPos = [0, -halfH, 0];
   const bottomRot = [Math.PI / 2, 0, 0];
   const bottomInitialPos = [0, -halfH, 0];
+  const bottomFlippedPos = [0, -halfH, 0];
+  const bottomFlippedRot = [Math.PI / 2, 0, 0];
   const bottomFlatPos = [0, -halfH, 0];
   const bottomFlatRot = [-Math.PI / 2, 0, 0];
   
@@ -299,38 +555,52 @@ export function calculateFaceLayouts(boardSizes) {
       front:  { sizesA: boardSizes.x, sizesB: boardSizes.y, 
         final_position: frontPos, final_rotation: frontRot,
         initial_position: frontInitialPos, initial_rotation: frontRot,
+        flipped_position: frontFlippedPos, flipped_rotation: frontFlippedRot,
         flat_position: frontFlatPos, flat_rotation: frontFlatRot },
       back:   { sizesA: boardSizes.x.slice().reverse(), sizesB: boardSizes.y, 
         final_position: backPos, final_rotation: backRot, 
         initial_position: backInitialPos, initial_rotation: backRot,
+        flipped_position: backFlippedPos, flipped_rotation: backFlippedRot,
         flat_position: backFlatPos, flat_rotation: backFlatRot },
       left:   { sizesA: boardSizes.z, sizesB: boardSizes.y, 
         final_position: leftPos, final_rotation: leftRot ,
         initial_position: leftInitialPos, initial_rotation: leftRot,
+        flipped_position: leftFlippedPos, flipped_rotation: leftFlippedRot,
         flat_position: leftFlatPos, flat_rotation: leftFlatRot },
       right:  { sizesA: boardSizes.z.slice().reverse(), sizesB: boardSizes.y, 
         final_position: rightPos, final_rotation: rightRot, 
         initial_position: rightInitialPos, initial_rotation: rightRot,
+        flipped_position: rightFlippedPos, flipped_rotation: rightFlippedRot,
         flat_position: rightFlatPos, flat_rotation: rightFlatRot },
       top:    { sizesA: boardSizes.x, sizesB: boardSizes.z.slice().reverse(), 
         final_position: topPos, final_rotation: topRot, 
         initial_position: topInitialPos, initial_rotation: topRot,
+        flipped_position: topFlippedPos, flipped_rotation: topFlippedRot,
         flat_position: topFlatPos, flat_rotation: topFlatRot },
       bottom: { sizesA: boardSizes.x, sizesB: boardSizes.z, 
         final_position: bottomPos, final_rotation: bottomRot,
         initial_position: bottomInitialPos, initial_rotation: bottomRot,
+        flipped_position: bottomFlippedPos, flipped_rotation: bottomFlippedRot,
         flat_position: bottomFlatPos, flat_rotation: bottomFlatRot }
   };
 
   // Build the final faceLayouts object
   const faceLayouts = {};
   Object.entries(faceConfigs).forEach(([faceName, cfg]) => {
+      const boards = computeBoards(cfg.sizesA, cfg.sizesB);
+
       faceLayouts[faceName] = {
-          boards: computeBoards(cfg.sizesA, cfg.sizesB), // Get boards with type info
+          boards: boards,
+          cubes: calculateCubes(boards),
+          pieces: calculatePieces(boards),
+          bars: calculateBars(boards),
+          screws: calculateCubes(boards),
           final_position: cfg.final_position,
           final_rotation: cfg.final_rotation,
           initial_position: cfg.initial_position, 
           initial_rotation: cfg.initial_rotation, 
+          flipped_position: cfg.flipped_position,
+          flipped_rotation: cfg.flipped_rotation,
           flat_position: cfg.flat_position,
           flat_rotation: cfg.flat_rotation
       };
@@ -338,10 +608,31 @@ export function calculateFaceLayouts(boardSizes) {
 
   // Calculate cube positions for corners and edges
   const cubeLayouts = calculateCubePositions(halfW, halfH, halfD, boardSizes);
+
+  const cornerScrews = cubeLayouts.cornerCubes.map(cube => ({
+    final_position: [cube.final_position[0], cube.final_position[1], cube.final_position[2]],
+    final_rotation: cube.final_rotation,
+    initial_position: [cube.initial_position[0], cube.initial_position[1], cube.initial_position[2]],
+    initial_rotation: cube.initial_rotation
+  }));
+
+  const edgeScrews = cubeLayouts.edgeCubes.map(cube => ({
+    final_position: [cube.final_position[0], cube.final_position[1], cube.final_position[2]],
+    final_rotation: cube.final_rotation,
+    initial_position: [cube.initial_position[0], cube.initial_position[1], cube.initial_position[2]],
+    initial_rotation: cube.initial_rotation
+  }));
+
+  const screwLayouts = {
+    cornerScrews,
+    edgeScrews
+  };
+
   
   // Return both face layouts and cube layouts
   return {
       faceLayouts,
-      cubeLayouts
+      cubeLayouts,
+      screwLayouts
   };
 }

@@ -11,8 +11,7 @@ import { sizeLarge, sizeMedium, sizeSmall, gap, thickness } from '../configs/boa
 // }
 
 function getTotalSize(boards) {
-  let size = boards.reduce((sum, b) => sum + b + gap, -gap);
-  return Math.max(size, 0);
+  return boards.reduce((sum, b) => sum + b, 0);
 }
 
 /**
@@ -33,7 +32,7 @@ function generateCandidateForDimension(D, useMedium = false, smallCount = 0) {
 
     // Try tweaking the candidate:
     // If we want to use a medium board and it fits, add it.
-    if (useMedium && getTotalSize(boards) + sizeMedium <= D) {
+    if (useMedium) {
         boards.push(sizeMedium);
     }
 

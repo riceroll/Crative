@@ -53,7 +53,7 @@ export async function preloadModels() {
   const entries = [
     'b40x40', 'b40x24', 'b40x5',
     'b24x5', 'b5x5',
-    'bar', 'cube', 'nut', 'screw'
+    'bar', 'cube', 'nut', 'screw', 'piece'
   ]
   const results = await Promise.all(entries.map(loadObjModel))
 

@@ -42,12 +42,6 @@ export const boardTypes = {
 
 export const cubePrice = 1.20;
 
-export const screwPrice = 0.15;
-
-export const stickPrice = 0.2;
-
-export const piecePrice = 0.2;
-
 // Helper function to get board price (returns 0 if type not found)
 export function getBoardPrice(boardType) {
     return boardTypes[boardType]?.price || 0;

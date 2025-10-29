@@ -48,7 +48,7 @@ export default function NewThreeDView({ enableDebug = false, showPerformanceStat
   // Handle performance monitoring
   const handlePerformanceUpdate = (stats) => {
     if (showPerformanceStats) {
-      console.log('[NewThreeDView] Performance Stats:', stats);
+      // console.log('[NewThreeDView] Performance Stats:', stats);
     }
   };
 

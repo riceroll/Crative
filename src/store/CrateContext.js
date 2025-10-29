@@ -1,6 +1,7 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
 import { calculateCandidateCrates } from '../utils/candidateCrateCalculator';
 import { convertToInches, convertToDisplay } from '../utils/utils';
+
 
 export const CrateContext = createContext(null);
 
@@ -18,18 +19,36 @@ export function CrateProvider({ children }) {
   const [boardTypesToExclude, setBoardTypesToExclude] = useState([
     'board_24x5',
     'board_24x24',
-    'board_40x24'
+    // 'board_40x24'
   ]);
 
   // Recompute candidate crates whenever innerDims or boardTypesToExclude change
   useEffect(() => {
+    // Calculate new candidate crates
     const candidates = calculateCandidateCrates(innerDims, boardTypesToExclude);
+
+    // Update the candidate crates state
     setCandidateCrates(candidates);
+
     // Select the first candidate by default if available
     setSelectedCandidateId( (selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId) ? candidates[0]?.id : selectedCandidateId );
+
   }, [innerDims, boardTypesToExclude, visualizeBoardTypes]);
 
-  const selectedCandidate = candidateCrates.find(c => c.id === selectedCandidateId) || null;
+  // useEffect(() => {
+  //   setAssemblyProgress(1.0);
+  // }, [selectedCandidateId]);
+
+  const selectedCandidate = useMemo(
+    () => candidateCrates.find(c => c.id === selectedCandidateId) || null,
+
+    [candidateCrates, selectedCandidateId]
+  );
+
+  useEffect(() => {
+    // For debugging: expose selectedCandidate globally
+    window.candidate = selectedCandidate;
+  }, [selectedCandidate]);
 
   // Function to toggle the visualization state
   const toggleVisualizeBoardTypes = () => {
