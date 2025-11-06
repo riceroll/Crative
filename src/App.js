@@ -1,4 +1,5 @@
 import React from 'react'
+import LogoCard from './components/GUI/LogoCard'
 import InputForm from './components/GUI/InputForm'
 import OptionsList from './components/GUI/OptionsList'
 import VisualizationOptions from './components/GUI/VisualizationOptions'
@@ -24,10 +25,11 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       <div className='sidebar'>
+        <LogoCard />
         <InputForm />
         <OptionsList />
         <VisualizationOptions /> 
-        <BoardTypeFilter />
+        {/* <BoardTypeFilter /> */}
         <ComponentList />
         <ProgressSlider />
       </div>

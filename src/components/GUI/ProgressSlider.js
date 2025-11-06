@@ -1,11 +1,11 @@
 import React, { useContext, useState } from 'react';
 import { CrateContext } from '../../store/CrateContext';
-import { MdFullscreen, MdFullscreenExit } from 'react-icons/md'; // Material Design icons
+import { MdFullscreen, MdFullscreenExit, MdViewAgenda } from 'react-icons/md'; // Material Design icons
 import '../../styles/ui.css';
 
 export default function ProgressSlider() {
   const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sliderPosition, setSliderPosition] = useState('bottom'); // 'card', 'bottom', 'right'
 
   
 
@@ -14,8 +14,26 @@ export default function ProgressSlider() {
     setAssemblyProgress(newProgress);
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  const togglePosition = () => {
+    setSliderPosition(prev => {
+      // if (prev === 'card') return 'bottom';
+      // if (prev === 'bottom') return 'right';
+      // return 'card';
+      if (prev === 'card') return 'right';
+      return 'card';
+    });
+  };
+
+  const getPositionIcon = () => {
+    if (sliderPosition === 'card') return <MdFullscreen />;
+    // if (sliderPosition === 'bottom') return <MdViewAgenda />;
+    return <MdFullscreenExit />;
+  };
+
+  const getPositionTitle = () => {
+    if (sliderPosition === 'card') return 'Move to right';
+    // if (sliderPosition === 'bottom') return 'Move to right';
+    return 'Move to card';
   };
 
   // return (
@@ -39,7 +57,7 @@ export default function ProgressSlider() {
 
 
   return (
-    <div className={`card ${isFullscreen ? 'fullscreen-slider' : ''}`}>
+    <div className={`card ${sliderPosition === 'bottom' ? 'fullscreen-slider' : ''} ${sliderPosition === 'right' ? 'vertical-slider' : ''}`}>
       <div className="card-title">
         Assembly Progress
       </div>
@@ -47,13 +65,13 @@ export default function ProgressSlider() {
 
       <div className="slider-container">
 
-        <div 
-          onClick={toggleFullscreen}
+        {/* <div 
+          onClick={togglePosition}
           className="toggle-fullscreen-btn"
-          title={isFullscreen ? "Exit fullscreen" : "Fullscreen slider"}
+          title={getPositionTitle()}
         >
-          {isFullscreen ? <MdFullscreenExit /> : <MdFullscreen />}
-        </div>
+          {getPositionIcon()}
+        </div> */}
 
         <input
           id="progress-slider"
@@ -64,6 +82,8 @@ export default function ProgressSlider() {
           value={assemblyProgress}
           onChange={handleChange}
           className="progress-slider"
+          orient={sliderPosition === 'right' ? "vertical" : "horizontal"}
+          style={sliderPosition === 'right' ? { writingMode: 'bt-lr' } : {}}
         />
         <div className="slider-value">{Math.round(assemblyProgress * 100)}%</div>
 

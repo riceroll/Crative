@@ -107,7 +107,11 @@ function GroupRenderer({ part, sceneGraph, position, rotation, alpha }) {
   }
 
   return (
-    <group position={position} rotation={rotation}>
+    <group 
+      position={position} 
+      rotation={rotation}
+      userData={{ part_id: part.part_id }}
+    >
       {props.children.map(childId => {
         const childPart = sceneGraph[childId];
         if (!childPart) {
@@ -186,6 +190,9 @@ function ModelRenderer({ part, models, position, rotation, alpha, visualizeBoard
       child.material.color.set(cubeColor);
     }
   }
+
+  // Add part_id to userData for camera tracking
+  Model.userData = { part_id: part.part_id };
 
   return (
     <primitive 

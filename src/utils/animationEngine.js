@@ -1,6 +1,8 @@
 // Animation Engine Module
 // Handles motion sequences, progress calculations, and current state updates
 
+import * as THREE from 'three';
+
 /**
  * Create ordered motion sequence from scene graph keyframes
  * @param {Object} sceneGraph - Complete scene graph with all parts
@@ -85,18 +87,29 @@ export function createMotionSequence(sceneGraph) {
   pattern = /^screw_(corner|edge)_\d+_initial$/;
   collectKeyframesMatchingPattern(pattern);
 
-  // Add motions to sequence with timing
+  // Add motions to sequence with timing and pre-computed camera targets
   phaseMotions.forEach((motion, index) => {
     const startTime = cumulativeDuration;
     const duration = motion.keyframe.duration;
     const endTime = startTime + duration;
+
+    const part = sceneGraph[motion.part_id];
+    
+    // Pre-compute camera focus target (world position) for this motion
+    const cameraFocusTarget = computeCameraFocusTargetForMotion(part, motion.keyframe, sceneGraph);
+    const cameraDistance = calculateOptimalDistanceForMotion(part, motion.keyframe);
+    const cameraAngle = getCameraAngleForMotionPhase(part, motion.keyframe);
 
     motions.push({
       ...motion,
       startTime,
       duration,
       endTime,
-      index: motions.length
+      index: motions.length,
+      // Pre-computed camera parameters
+      cameraFocusTarget,  // World position to look at
+      cameraDistance,     // Optimal viewing distance
+      cameraAngle        // Optimal viewing angle [pitch, yaw, roll]
     });
 
     cumulativeDuration = Math.max(cumulativeDuration, endTime);
@@ -113,10 +126,11 @@ export function createMotionSequence(sceneGraph) {
  * @param {Object} sceneGraph - Scene graph to update
  * @param {number} globalProgress - Progress from 0 to 1
  * @param {Object} motionSequence - Motion sequence from createMotionSequence
- * @returns {Object} Updated scene graph with current_state values
+ * @returns {Object} { sceneGraph, activePart } - Updated scene graph and currently active part info
  */
 export function updateCurrentStates(sceneGraph, globalProgress, motionSequence) {
   const currentTime = globalProgress * motionSequence.totalDuration;
+  let activePart = null;
   
   // Reset all parts to their default final state
   Object.values(sceneGraph).forEach(part => {
@@ -149,11 +163,22 @@ export function updateCurrentStates(sceneGraph, globalProgress, motionSequence) 
             const clampedProgress = Math.max(0, Math.min(1, motionProgress));
             if (clampedProgress > 0 && clampedProgress < 1) {
                 applyMotionToState(sceneGraph, motion, clampedProgress);
+                
+                // Track the active part for camera (use the last active motion for camera focus)
+                const part = sceneGraph[motion.part_id];
+                if (part) {
+                  activePart = {
+                    partId: motion.part_id,
+                    part: part,
+                    motion: motion,
+                    progress: clampedProgress
+                  };
+                }
             }
         }
     });
 
-  return sceneGraph;
+  return { sceneGraph, activePart };
 }
 
 /**
@@ -365,4 +390,615 @@ export function getMotionProgress(motion, globalProgress, totalDuration) {
   if (currentTime > motion.endTime) return 1;
   
   return (currentTime - motion.startTime) / motion.duration;
+}
+
+/**
+ * Camera Helper Functions
+ */
+
+/**
+ * Compute camera focus target (world position) for a motion's keyframe
+ * This calculates where the camera should look during this specific animation phase
+ * @param {Object} part - Part from scene graph
+ * @param {Object} keyframe - Keyframe data
+ * @param {Object} sceneGraph - Full scene graph for parent traversal
+ * @returns {Array} World position [x, y, z] to focus camera on
+ */
+function computeCameraFocusTargetForMotion(part, keyframe, sceneGraph) {
+  if (!part || !keyframe) {
+    return [0, 0, 0];
+  }
+
+  // Calculate the world position of the part at this keyframe state
+  // This represents where the part will be during this motion
+  const worldPos = calculateWorldPositionForKeyframe(part, keyframe, sceneGraph);
+  
+  // Scale the position to match the scene scale (0.1)
+  const scaledPos = [
+    worldPos[0] * 0.1,
+    worldPos[1] * 0.1,
+    worldPos[2] * 0.1
+  ];
+  
+  return scaledPos;
+}
+
+/**
+ * Calculate world position for a part at a specific keyframe state
+ * @param {Object} part - Part from scene graph
+ * @param {Object} keyframe - Keyframe data with pos/rot
+ * @param {Object} sceneGraph - Full scene graph for parent traversal
+ * @returns {Array} World position [x, y, z]
+ */
+function calculateWorldPositionForKeyframe(part, keyframe, sceneGraph) {
+  // Build the path from root to this part
+  const path = [];
+  let currentPart = part;
+  
+  // Traverse up to build the path
+  while (currentPart) {
+    path.unshift(currentPart); // Add to beginning
+    
+    if (currentPart.properties.parent && currentPart.properties.parent.part_id !== 'crate_root') {
+      currentPart = currentPart.properties.parent;
+    } else {
+      break;
+    }
+  }
+  
+  // Start with world origin
+  let worldPos = [0, 0, 0];
+  
+  // Apply transforms from root to target
+  for (let i = 0; i < path.length; i++) {
+    const partInPath = path[i];
+    
+    // For the target part, use its base position + keyframe position
+    if (partInPath === part) {
+      const totalPos = [
+        partInPath.properties.pos[0] + keyframe.pos[0],
+        partInPath.properties.pos[1] + keyframe.pos[1],
+        partInPath.properties.pos[2] + keyframe.pos[2]
+      ];
+      worldPos[0] += totalPos[0];
+      worldPos[1] += totalPos[1];
+      worldPos[2] += totalPos[2];
+    } else {
+      // For parent parts, just use their base position
+      worldPos[0] += partInPath.properties.pos[0];
+      worldPos[1] += partInPath.properties.pos[1];
+      worldPos[2] += partInPath.properties.pos[2];
+    }
+  }
+  
+  return worldPos;
+}
+
+/**
+ * Calculate optimal camera distance for a motion's keyframe
+ * @param {Object} part - Part from scene graph
+ * @param {Object} keyframe - Keyframe data
+ * @returns {number} Optimal camera distance
+ */
+function calculateOptimalDistanceForMotion(part, keyframe) {
+  const partId = part.part_id;
+
+  // Distance based on part type for optimal framing
+  if (partId.includes('cube') || partId.includes('screw') || partId.includes('piece')) {
+    return 20;
+  }
+
+  if (partId.includes('bar')) {
+    return 80;
+  }
+
+  if (partId.includes('board')) {
+    return 80;
+  }
+
+  if (partId.includes('strip')) {
+    return 80;
+  }
+  
+  if (partId.startsWith('face_')) {
+    return 80;
+  }
+
+  // Default distance
+  return 80;
+}
+
+/**
+ * Get camera angle for a motion phase
+ * @param {Object} part - Part from scene graph
+ * @param {Object} keyframe - Keyframe data
+ * @returns {Array} Camera angle [pitch, yaw, roll]
+ */
+function getCameraAngleForMotionPhase(part, keyframe) {
+  return [Math.PI / 4, Math.PI / 4, 0];
+  const keyframeId = keyframe.keyframe_id;
+  const partId = part.part_id;
+  
+  // Determine face orientation for better viewing angle
+  if (partId.includes('face_top')) {
+    return [Math.PI / 2.5, 0, 0]; // Look from above for top face
+  }
+  
+  if (partId.includes('face_bottom')) {
+    return [Math.PI / 6, Math.PI / 4, 0]; // Slight angle for bottom
+  }
+  
+  if (partId.includes('face_front')) {
+    return [Math.PI / 6, 0, 0]; // Straight on for front
+  }
+  
+  if (partId.includes('face_back')) {
+    return [Math.PI / 6, Math.PI, 0]; // Look from behind
+  }
+  
+  if (partId.includes('face_left')) {
+    return [Math.PI / 6, -Math.PI / 2, 0]; // Look from left
+  }
+  
+  if (partId.includes('face_right')) {
+    return [Math.PI / 6, Math.PI / 2, 0]; // Look from right
+  }
+  
+  // Animation phase-based angles
+  if (keyframeId.includes('_appear')) {
+    return [Math.PI / 6, Math.PI / 4, 0]; // Slightly elevated for appear
+  }
+  
+  if (keyframeId.includes('_displaced')) {
+    return [Math.PI / 4, Math.PI / 3, 0]; // More angled for displaced
+  }
+  
+  if (keyframeId.includes('_initial')) {
+    return [Math.PI / 3, Math.PI / 4, 0]; // Higher view for initial
+  }
+  
+  if (keyframeId.includes('_flat')) {
+    return [Math.PI / 4, Math.PI / 4, 0]; // Standard angle for flat
+  }
+  
+  if (keyframeId.includes('_flipped')) {
+    return [Math.PI / 3, Math.PI / 6, 0]; // Higher for flipped
+  }
+  
+  // Default angle - 45 degrees on both axes
+  return [Math.PI / 4, Math.PI / 4, 0];
+}
+
+/**
+ * Calculate world position for a part
+ * @param {Object} part - Part from scene graph
+ * @param {Object} sceneGraph - Full scene graph for parent traversal
+ * @returns {Array} World position [x, y, z]
+ */
+export function calculateWorldPosition_backup(part, sceneGraph) {
+  const worldPos = [part.properties.pos[0], part.properties.pos[1], part.properties.pos[2]];
+  const currentState = part.properties.current_state;
+  
+  // // Add current relative position
+  // worldPos[0] += currentState.rel_pos[0];
+  // worldPos[1] += currentState.rel_pos[1];
+  // worldPos[2] += currentState.rel_pos[2];
+  
+  // Traverse parent hierarchy if needed
+  let currentPart = part;
+  while (currentPart.properties.parent && currentPart.properties.parent.part_id !== 'crate_root') {
+    const parentPart = currentPart.properties.parent;
+    if (parentPart) {
+      worldPos[0] += parentPart.properties.pos[0];
+      worldPos[1] += parentPart.properties.pos[1];
+      worldPos[2] += parentPart.properties.pos[2];
+      currentPart = parentPart;
+    } else {
+      break;
+    }
+  }
+
+  console.log('Calculated world position for', part.part_id, ':', worldPos);
+  
+  return worldPos;
+}
+
+/**
+ * Calculate world position for a part (applying rotations and positions in hierarchy)
+ * @param {Object} part - Part from scene graph
+ * @param {Object} sceneGraph - Full scene graph for parent traversal
+ * @returns {Array} World position [x, y, z]
+ */
+export function calculateWorldPosition(part, sceneGraph) {
+  // Build the path from root to this part
+  const path = [];
+  let currentPart = part;
+  
+  // Traverse up to build the path
+  while (currentPart) {
+    path.unshift(currentPart); // Add to beginning
+    
+    if (currentPart.properties.parent && currentPart.properties.parent.part_id !== 'crate_root') {
+      currentPart = currentPart.properties.parent;
+    } else {
+      break;
+    }
+  }
+  
+  // Collect all relative positions and rotations from root to target
+  const transforms = path.map(partInPath => {
+    const localPos = [...partInPath.properties.pos];
+    const localRot = [...partInPath.properties.rot];
+        
+    return { pos: localPos, rot: localRot };
+  });
+  
+  // Apply transforms from root to target
+  let worldPos = [0, 0, 0];
+  
+  for (let i = 0; i < transforms.length; i++) {
+    const transform = transforms[i];
+    
+    // If not the first (root), apply parent's rotation to this position
+    if (i > 0) {
+      const parentRot = transforms[i - 1].rot;
+      const rotatedPos = applyRotation(transform.pos, parentRot);
+      worldPos[0] += rotatedPos[0];
+      worldPos[1] += rotatedPos[1];
+      worldPos[2] += rotatedPos[2];
+    } else {
+      // Root node - just add position directly
+      worldPos[0] += transform.pos[0];
+      worldPos[1] += transform.pos[1];
+      worldPos[2] += transform.pos[2];
+    }
+  }
+  
+  console.log('Calculated world position for', part.part_id, ':', worldPos);
+  
+  return worldPos;
+}
+
+/**
+ * Apply rotation to a position vector
+ * Assumes rotation order: Z, Y, X (Euler angles in radians)
+ * @param {Array} pos - Position [x, y, z]
+ * @param {Array} rot - Rotation [rx, ry, rz] in radians
+ * @returns {Array} Rotated position
+ */
+function applyRotation(pos, rot) {
+  const [x, y, z] = pos;
+  const [rx, ry, rz] = rot;
+  
+  // Rotation around Z axis
+  let x1 = x * Math.cos(rz) - y * Math.sin(rz);
+  let y1 = x * Math.sin(rz) + y * Math.cos(rz);
+  let z1 = z;
+  
+  // Rotation around Y axis
+  let x2 = x1 * Math.cos(ry) + z1 * Math.sin(ry);
+  let y2 = y1;
+  let z2 = -x1 * Math.sin(ry) + z1 * Math.cos(ry);
+  
+  // Rotation around X axis
+  let x3 = x2;
+  let y3 = y2 * Math.cos(rx) - z2 * Math.sin(rx);
+  let z3 = y2 * Math.sin(rx) + z2 * Math.cos(rx);
+  
+  return [x3, y3, z3];
+}
+
+/**
+ * Get camera target position for active part
+ * @param {Object} activePart - Active part info from updateCurrentStates
+ * @param {Object} sceneGraph - Full scene graph
+ * @returns {Array|null} Target position [x, y, z] or null if no active part
+ */
+export function getCameraTargetForActivePart(activePart, sceneGraph) {
+  if (!activePart) return null;
+  
+  const { part, motion, progress } = activePart;
+  const keyframe = motion.keyframe;
+  const nextKeyframe = getNextKeyframe(part, motion.keyframe_id);
+
+  const currentWorldPos = calculateWorldPosition(part, sceneGraph);
+  
+  // Calculate end position by adding the displacement between keyframes
+  const endWorldPos = [
+    currentWorldPos[0] + (nextKeyframe.pos[0] - keyframe.pos[0]),
+    currentWorldPos[1] + (nextKeyframe.pos[1] - keyframe.pos[1]),
+    currentWorldPos[2] + (nextKeyframe.pos[2] - keyframe.pos[2])
+  ];
+
+  const outPos = currentWorldPos;
+
+
+  const scaledPos = [
+    outPos[0] * 0.1,
+    outPos[1] * 0.1,
+    outPos[2] * 0.1
+      ];
+
+  return scaledPos;
+  
+}
+
+/**
+ * Calculate optimal camera distance based on part type
+ * @param {Object} part - Part from scene graph
+ * @returns {number} Optimal camera distance
+ */
+export function calculateOptimalDistance(part, motion) {
+  return 300;
+  const partType = part.properties.type;
+  const partId = part.part_id;
+
+  if (partId.includes('cube') || partId.includes('screw') || partId.includes('piece')) {
+    return 30;
+  }
+
+  if (partId.includes('bar')) {
+    return 50;
+  }
+
+  if (partId.includes('board')) {
+    return 80;
+  }
+
+  if (partId.includes('strip')) {
+    return 120;
+  }
+  
+  if (partId.startsWith('face_')) {
+    return 200;
+  }
+
+  // get start and end position, calculate the distance and return a value based on that
+  const keyframe = motion.keyframe;
+  const nextKeyframe = getNextKeyframe(part, motion.keyframe_id);
+  const startPos = [...part.properties.pos];
+  startPos[0] += keyframe.pos[0];
+  startPos[1] += keyframe.pos[1];
+  startPos[2] += keyframe.pos[2];
+  
+  let endPos;
+  if (nextKeyframe) {
+    endPos = [...part.properties.pos];
+    endPos[0] += nextKeyframe.pos[0];
+    endPos[1] += nextKeyframe.pos[1];
+    endPos[2] += nextKeyframe.pos[2];
+  } else {
+    endPos = [...part.properties.pos];
+  }
+  
+  const distance = Math.sqrt(
+    Math.pow(endPos[0] - startPos[0], 2) +
+    Math.pow(endPos[1] - startPos[1], 2) +
+    Math.pow(endPos[2] - startPos[2], 2)
+  );
+  
+  return distance * 1; // Scale factor for better framing
+  
+  
+}
+
+/**
+ * Get camera angle based on part type and motion phase
+ * @param {Object} part - Part from scene graph
+ * @param {Object} motion - Motion object
+ * @returns {Array} Camera angle [pitch, yaw, roll]
+ */
+export function getCameraAngleForMotion(part, motion) {
+  return [Math.PI / 4, Math.PI / 4, 0]; // Default angle
+
+  const keyframeId = motion.keyframe_id;
+  const partId = part.part_id;
+  
+  // Determine face orientation for better viewing angle
+  if (partId.includes('face_top')) {
+    return [Math.PI / 2.5, 0, 0]; // Look from above for top face
+  }
+  
+  if (partId.includes('face_bottom')) {
+    return [Math.PI / 6, Math.PI / 4, 0]; // Slight angle for bottom
+  }
+  
+  if (partId.includes('face_front')) {
+    return [Math.PI / 6, 0, 0]; // Straight on for front
+  }
+  
+  if (partId.includes('face_back')) {
+    return [Math.PI / 6, Math.PI, 0]; // Look from behind
+  }
+  
+  if (partId.includes('face_left')) {
+    return [Math.PI / 6, -Math.PI / 2, 0]; // Look from left
+  }
+  
+  if (partId.includes('face_right')) {
+    return [Math.PI / 6, Math.PI / 2, 0]; // Look from right
+  }
+  
+  // Animation phase-based angles
+  if (keyframeId.includes('_appear')) {
+    return [Math.PI / 6, Math.PI / 4, 0]; // Slightly elevated for appear
+  }
+  
+  if (keyframeId.includes('_displaced')) {
+    return [Math.PI / 4, Math.PI / 3, 0]; // More angled for displaced
+  }
+  
+  if (keyframeId.includes('_initial')) {
+    return [Math.PI / 3, Math.PI / 4, 0]; // Higher view for initial
+  }
+  
+  if (keyframeId.includes('_flat')) {
+    return [Math.PI / 4, Math.PI / 4, 0]; // Standard angle for flat
+  }
+  
+  if (keyframeId.includes('_flipped')) {
+    return [Math.PI / 3, Math.PI / 6, 0]; // Higher for flipped
+  }
+  
+  // Default angle - 45 degrees on both axes
+  return [Math.PI / 4, Math.PI / 4, 0];
+}
+
+/**
+ * Get camera parameters for active part
+ * @param {Object} activePart - Active part info from updateCurrentStates
+ * @param {Object} sceneGraph - Full scene graph
+ * @returns {Object|null} { target, distance, angle } or null if no active part
+ */
+export function getCameraParameters(activePart, sceneGraph) {
+  if (!activePart) return null;
+  
+  const target = getCameraTargetForActivePart(activePart, sceneGraph);
+  const distance = calculateOptimalDistance(activePart.part, activePart.motion);
+  const angle = getCameraAngleForMotion(activePart.part, activePart.motion);
+  
+  return { target, distance, angle };
+}
+
+/**
+ * Get camera parameters from motion sequence based on global progress
+ * Returns fixed camera position for the current motion phase (no interpolation)
+ * @param {Object} motionSequence - Motion sequence with pre-computed camera targets
+ * @param {number} globalProgress - Progress from 0 to 1
+ * @returns {Object} { target, distance, angle } - Camera parameters for current phase
+ */
+export function getInterpolatedCameraParameters(motionSequence, globalProgress) {
+  if (!motionSequence || !motionSequence.motions || motionSequence.motions.length === 0) {
+    // Default camera parameters
+    return {
+      target: [0, 0, 0],
+      distance: 150,
+      angle: [Math.PI / 4, Math.PI / 4, 0]
+    };
+  }
+
+  const currentTime = globalProgress * motionSequence.totalDuration;
+  
+  // Find the current motion(s) at this time
+  const activeMotions = motionSequence.motions.filter(motion => 
+    currentTime >= motion.startTime && currentTime <= motion.endTime
+  );
+
+  // If we have an active motion, use its fixed camera parameters
+  if (activeMotions.length > 0) {
+    // Use the last active motion (most relevant)
+    const currentMotion = activeMotions[activeMotions.length - 1];
+    
+    // Return the fixed camera parameters for this motion phase
+    return {
+      target: currentMotion.cameraFocusTarget,
+      distance: currentMotion.cameraDistance,
+      angle: currentMotion.cameraAngle
+    };
+  }
+
+  // No active motions - find the nearest motion
+  // Either we're before all motions or after all motions
+  if (currentTime <= motionSequence.motions[0].startTime) {
+    // Before first motion - use first motion's camera
+    const firstMotion = motionSequence.motions[0];
+    return {
+      target: firstMotion.cameraFocusTarget,
+      distance: firstMotion.cameraDistance,
+      angle: firstMotion.cameraAngle
+    };
+  }
+
+  // After all motions - use last motion's camera
+  const lastMotion = motionSequence.motions[motionSequence.motions.length - 1];
+  return {
+    target: lastMotion.cameraFocusTarget,
+    distance: lastMotion.cameraDistance,
+    angle: lastMotion.cameraAngle
+  };
+}
+
+/**
+ * Pre-compute camera targets by running animation to each phase's end and capturing Three.js positions
+ * Uses activePart to determine which part to focus on at each phase
+ * @param {Object} motionSequence - Motion sequence to update
+ * @param {Object} threeScene - Three.js scene
+ * @param {Object} sceneGraph - Scene graph
+ * @param {Function} setProgressCallback - Function to set animation progress
+ * @returns {Promise<Object>} Updated motion sequence with real camera targets
+ */
+export async function precomputeCameraTargetsFromAnimation(
+  motionSequence,
+  threeScene,
+  sceneGraph,
+  setProgressCallback,
+  onProgressUpdate
+) {
+  if (!motionSequence || !threeScene || !sceneGraph || !setProgressCallback) {
+    return motionSequence;
+  }
+
+  const updatedMotions = [];
+  const totalMotions = motionSequence.motions.length;
+
+  for (let i = 0; i < totalMotions; i++) {
+    const motion = motionSequence.motions[i];
+    
+    // Report progress
+    if (onProgressUpdate) {
+      onProgressUpdate(i + 1, totalMotions);
+    }
+    
+    // Calculate progress for the END of this motion (slightly before absolute end)
+    const targetTime = Math.max(0, motion.endTime - 0.01);
+    const targetProgress = Math.min(1, Math.max(0, targetTime / motionSequence.totalDuration));
+    
+    // Set animation to this progress - triggers re-render
+    setProgressCallback(targetProgress);
+    
+    // Wait for React and Three.js to render (2 frames)
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    }));
+    
+    // Update scene graph to get the activePart at this progress
+    const { activePart } = updateCurrentStates(
+      JSON.parse(JSON.stringify(sceneGraph)),
+      targetProgress,
+      motionSequence
+    );
+    
+    let cameraFocusTarget = [0, 0, 0]; // Default fallback
+    
+    // If we have an activePart, find its Three.js mesh and get world position
+    if (activePart) {
+      const targetPartId = activePart.partId;
+      
+      // Find the Three.js mesh for this part
+      let targetMesh = null;
+      threeScene.traverse((object) => {
+        if (object.userData && object.userData.part_id === targetPartId) {
+          targetMesh = object;
+        }
+      });
+      
+      if (targetMesh) {
+        // Get actual world position from Three.js
+        const worldPos = new THREE.Vector3();
+        targetMesh.getWorldPosition(worldPos);
+        cameraFocusTarget = [worldPos.x, worldPos.y, worldPos.z];
+      }
+    }
+    
+    // Store this position as the camera focus target
+    updatedMotions.push({
+      ...motion,
+      cameraFocusTarget: cameraFocusTarget
+    });
+  }
+
+  return {
+    ...motionSequence,
+    motions: updatedMotions
+  };
 }

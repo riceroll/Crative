@@ -13,13 +13,15 @@ export function CrateProvider({ children }) {
   const [candidateCrates, setCandidateCrates] = useState([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);
   const [visualizeBoardTypes, setVisualizeBoardTypes] = useState(false);
+  const [autoCameraEnabled, setAutoCameraEnabled] = useState(false); // Off by default
   const [useInch, setUseInch] = useState(true);
   const [assemblyProgress, setAssemblyProgress] = useState(1.0);
   const [focusPosition, setFocusPosition] = useState([0, 0, 0]);
   const [boardTypesToExclude, setBoardTypesToExclude] = useState([
     'board_24x5',
     'board_24x24',
-    // 'board_40x24'
+    'board_40x24',
+    'board_5x5'
   ]);
 
   // Recompute candidate crates whenever innerDims or boardTypesToExclude change
@@ -33,7 +35,15 @@ export function CrateProvider({ children }) {
     // Select the first candidate by default if available
     setSelectedCandidateId( (selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId) ? candidates[0]?.id : selectedCandidateId );
 
+    // Turn off auto camera when dimensions change
+    setAutoCameraEnabled(false);
+
   }, [innerDims, boardTypesToExclude, visualizeBoardTypes]);
+
+  // Turn off auto camera when crate design changes
+  useEffect(() => {
+    setAutoCameraEnabled(false);
+  }, [selectedCandidateId]);
 
   // useEffect(() => {
   //   setAssemblyProgress(1.0);
@@ -53,6 +63,11 @@ export function CrateProvider({ children }) {
   // Function to toggle the visualization state
   const toggleVisualizeBoardTypes = () => {
     setVisualizeBoardTypes(prev => !prev);
+  };
+
+  // Function to toggle auto camera
+  const toggleAutoCameraEnabled = () => {
+    setAutoCameraEnabled(prev => !prev);
   };
 
   const toggleUseInch = () => {
@@ -79,6 +94,8 @@ export function CrateProvider({ children }) {
         selectedCandidate,
         visualizeBoardTypes, // <-- Expose state
         toggleVisualizeBoardTypes, // <-- Expose toggle function
+        autoCameraEnabled, // <-- Expose auto camera state
+        toggleAutoCameraEnabled, // <-- Expose auto camera toggle function
         useInch,
         toggleUseInch, 
         assemblyProgress,

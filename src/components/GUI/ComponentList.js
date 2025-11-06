@@ -1,10 +1,10 @@
-import React, { useContext, useRef, useEffect } from 'react'; // Import useRef
+import React, { useContext, useRef, useEffect, useState } from 'react';
 import { useReactToPrint } from 'react-to-print'; // Import useReactToPrint
 import { CrateContext } from '../../store/CrateContext';
-import { boardTypes, cubePrice, getBoardPrice } from '../../configs/boardConfig';
+import { boardTypes, cubePrice, getBoardPrice, screwPrice, stickPrice, piecePrice } from '../../configs/boardConfig';
 import '../../styles/ui.css';
 import { LuPrinter } from 'react-icons/lu';
-import { colors, defaultColor, cubeColor } from '../../configs/globalConfigs';
+import { colors, defaultColor, cubeColor, screwColor, pieceColor, stickColor } from '../../configs/globalConfigs';
 
 
 // Helper to format board type to image name (e.g., "board_40x40" -> "b40x40")
@@ -19,6 +19,8 @@ export default function ComponentList() {
   const { selectedCandidate, visualizeBoardTypes } = useContext(CrateContext);
   const componentRef = useRef();
   const triggerPrint = useReactToPrint({ contentRef: componentRef, documentTitle: `Component List – ${selectedCandidate?.id}` });
+  const [hoveredImg, setHoveredImg] = useState(null);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
   // build items
   const components = [];
@@ -27,12 +29,26 @@ export default function ComponentList() {
       const unitPrice = getBoardPrice(type);
       const colorIndex = Object.keys(boardTypes).indexOf(type);
       const color = visualizeBoardTypes ? colors[colorIndex] : defaultColor; // Use color from config or default
-      components.push({ type, name: type.replace('board_', 'Board '), imageName: getBoardImageName(type), count, unitPrice, totalCost: unitPrice * count, color  });
+      const formattedName = type.replace('board_', '').replace('x', '\'\'x') + '\'\'';
+      components.push({ type, name: formattedName, imageName: getBoardImageName(type), count, unitPrice, totalCost: unitPrice * count, color  });
     });
   }
   if (selectedCandidate?.cubeCount > 0) {
     const unitPrice = cubePrice;
-    components.push({ type: 'cube', name: 'Cube', imageName: 'cube', count: selectedCandidate.cubeCount, unitPrice, totalCost: unitPrice * selectedCandidate.cubeCount });
+    const color = cubeColor;
+    components.push({ type: 'cube', name: 'Cube Connector', imageName: 'cube', count: selectedCandidate.cubeCount, unitPrice, totalCost: unitPrice * selectedCandidate.cubeCount, color });
+  }
+  if (selectedCandidate?.screwCount > 0) {
+    const unitPrice = screwPrice;
+    components.push({ type: 'screw', name: 'M8 Bolt', imageName: 'screw', count: selectedCandidate.screwCount, unitPrice, totalCost: unitPrice * selectedCandidate.screwCount, color: screwColor });
+  }
+  if (selectedCandidate?.barCount > 0) {
+    const unitPrice = stickPrice;
+    components.push({ type: 'bar', name: 'Bar', imageName: 'bar', count: selectedCandidate.barCount, unitPrice, totalCost: unitPrice * selectedCandidate.barCount, color: stickColor });
+  }
+  if (selectedCandidate?.pieceCount > 0) {
+    const unitPrice = piecePrice;
+    components.push({ type: 'piece', name: '4-panel Space Connector', imageName: 'piece', count: selectedCandidate.pieceCount, unitPrice, totalCost: unitPrice * selectedCandidate.pieceCount, color: pieceColor });
   }
 
   // grand total
@@ -68,33 +84,54 @@ export default function ComponentList() {
                   <tr key={item.type} style={{borderTop: index === 0 ? '1px solid #ccc' : 'none'}}>
                     <td className="component-table-cell component-table-image-cell">
                       <span
-                      className="component-color-bar"
-                       style={{
+                        className="component-color-bar"
+                        style={{
+                          background: item.type === 'cube' ? cubeColor : item.color,
+                          verticalAlign: 'middle'
+                        }}></span>
 
-                        background: item.type === 'cube' ? cubeColor : item.color,
-                        verticalAlign: 'middle'
-                      }}></span>
-
-                      <img src={`./images/${item.imageName}.png`} alt={item.name} className="component-image"/>
+                      <img
+                        src={`./images/${item.imageName}.png`}
+                        alt={item.name}
+                        className="component-image"
+                        onMouseEnter={e => {
+                          setHoveredImg(`./images/${item.imageName}.png`);
+                          setHoverPos({ x: e.clientX, y: e.clientY });
+                        }}
+                        onMouseMove={e => setHoverPos({ x: e.clientX, y: e.clientY })}
+                        onMouseLeave={() => setHoveredImg(null)}
+                      />
                       <span>
                         {item.name}
                       </span>
                     </td>
-                    <td className="component-table-cell">{item.count}</td>
-                    <td className="component-table-cell unit-price-col">$ {item.unitPrice.toFixed(2)}</td>
-                    <td className="component-table-cell total-cost-col">$ {item.totalCost.toFixed(2)}</td>
+                    <td className="component-table-cell component-table-count">{item.count}</td>
+                    <td className="component-table-cell unit-price-col">$ {Math.round(item.unitPrice * 100) / 100}</td>
+                    <td className="component-table-cell total-cost-col">$ {Math.round(item.totalCost * 100) / 100}</td>
                   </tr>
                 ))}
                 <tr className="total-row">
                   <td className="component-table-cell" style={{fontWeight:'bold'}}>Grand Total:</td>
 
                   <td className="component-table-cell" style={{fontWeight:'bold'}}></td>
-                  <td className="component-table-cell" style={{fontWeight:'bold'}}>$ {totalAllCost.toFixed(2)}</td>
+                  <td className="component-table-cell" style={{fontWeight:'bold'}}>$ {Math.round(totalAllCost * 100) / 100}</td>
                 </tr>
               </tbody>
             </table>
         }
       </div>
+      {hoveredImg && (
+        <div
+          className="hover-preview"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <img src={hoveredImg} alt="Preview" />
+        </div>
+      )}
     </div>
   );
 }

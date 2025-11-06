@@ -1,49 +1,129 @@
 // New ThreeDView Component
 // Uses the new scene graph system for rendering
 
-import React, { useContext, useRef, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useContext, useRef, useEffect, useState } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { ModelContext } from '../store/ModelContext';
 import { CrateContext } from '../store/CrateContext';
+import { CameraProvider, useCameraContext } from '../store/CameraContext';
 import { useSimpleSceneGraph } from '../hooks/useSceneGraph';
 import SceneRenderer, { SceneGraphDebugger, ScenePerformanceMonitor } from './SceneRenderer';
+import CameraController from './CameraController';
+import { getCameraParameters, precomputeCameraTargetsFromAnimation } from '../utils/animationEngine';
+import { cubeColor } from '../configs/globalConfigs';
 
 export default function NewThreeDView({ enableDebug = false, showPerformanceStats = false }) {
+  return (
+    <CameraProvider>
+      <ThreeDViewContent enableDebug={enableDebug} showPerformanceStats={showPerformanceStats} />
+    </CameraProvider>
+  );
+}
+
+// Helper component to capture Three.js scene and pre-compute camera targets
+function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, setProgressCallback, autoCameraEnabled, onComputingProgress }) {
+  const { setThreeScene } = useCameraContext();
+  const { scene } = useThree();
+  const hasComputedRef = useRef(false);
+  const lastAutoCameraRef = useRef(autoCameraEnabled);
+  
+  useEffect(() => {
+    if (scene) {
+      setThreeScene(scene);
+    }
+  }, [scene, setThreeScene]);
+  
+  // Reset hasComputedRef when auto camera is turned on
+  useEffect(() => {
+    if (autoCameraEnabled && !lastAutoCameraRef.current) {
+      // Auto camera was just turned ON
+      hasComputedRef.current = false;
+    }
+    lastAutoCameraRef.current = autoCameraEnabled;
+  }, [autoCameraEnabled]);
+  
+  // Pre-compute camera targets when all dependencies are ready and auto camera is enabled
+  useEffect(() => {
+    if (scene && motionSequence && sceneGraph && setProgressCallback && autoCameraEnabled && !hasComputedRef.current) {
+      hasComputedRef.current = true;
+      
+      // Wait for next frame to ensure scene is rendered
+      requestAnimationFrame(async () => {
+        const updatedSequence = await precomputeCameraTargetsFromAnimation(
+          motionSequence,
+          scene,
+          sceneGraph,
+          setProgressCallback,
+          onComputingProgress
+        );
+        
+        if (onCameraTargetsComputed) {
+          onCameraTargetsComputed(updatedSequence);
+        }
+      });
+    }
+  }, [scene, motionSequence, sceneGraph, setProgressCallback, onCameraTargetsComputed, autoCameraEnabled, onComputingProgress]);
+  
+  return null;
+}
+
+function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
   const models = useContext(ModelContext);
-  const { innerDims, selectedCandidate, assemblyProgress, focusPosition } = useContext(CrateContext);
+  const { 
+    innerDims, 
+    selectedCandidate, 
+    assemblyProgress,
+    setAssemblyProgress,
+    focusPosition,
+    autoCameraEnabled 
+  } = useContext(CrateContext);
+  const { setMotionSequenceData, updateAssemblyProgress } = useCameraContext();
   const controlsRef = useRef();
+  const [computedMotionSequence, setComputedMotionSequence] = useState(null);
+  const originalProgressRef = useRef(assemblyProgress);
+  const [isComputingCamera, setIsComputingCamera] = useState(false);
+  const [computeProgress, setComputeProgress] = useState(0);
 
   // Use the scene graph hook
-  const { sceneGraph, isLoading, error } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
+  const { sceneGraph, activePart, motionSequence, isLoading, error } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
 
-  // Handle camera focus
+  // Handle when camera targets are computed
+  const handleCameraTargetsComputed = (updatedSequence) => {
+    setComputedMotionSequence(updatedSequence);
+    setMotionSequenceData(updatedSequence);
+    
+    // Restore original progress after computing
+    setAssemblyProgress(originalProgressRef.current);
+    
+    // Hide loading overlay
+    setIsComputingCamera(false);
+    setComputeProgress(0);
+  };
+  
+  // Handle computing progress updates
+  const handleComputingProgress = (current, total) => {
+    setIsComputingCamera(true);
+    setComputeProgress(Math.round((current / total) * 100));
+  };
+
+  // Save original progress before computation starts
   useEffect(() => {
-    if (controlsRef.current && focusPosition && false) {
-      controlsRef.current.target.set(...focusPosition);
+    originalProgressRef.current = assemblyProgress;
+  }, [assemblyProgress]);
 
-      // Set the camera position (zoom)
-      const camera = controlsRef.current.object;
-      // Calculate direction from camera to target
-      const dir = [
-        camera.position.x - focusPosition[0],
-        camera.position.y - focusPosition[1],
-        camera.position.z - focusPosition[2]
-      ];
-      // Set new distance (e.g., 20 units away)
-      const newDistance = 85; // Change this value for more/less zoom
-      const length = Math.sqrt(dir[0]**2 + dir[1]**2 + dir[2]**2);
-      if (length > 0) {
-        camera.position.set(
-          focusPosition[0] + (dir[0] / length) * newDistance,
-          focusPosition[1] + (dir[1] / length) * newDistance,
-          focusPosition[2] + (dir[2] / length) * newDistance
-        );
-      }
-
-      controlsRef.current.update();
+  // Pass motion sequence to camera context (prefer computed version)
+  useEffect(() => {
+    const sequenceToUse = computedMotionSequence || motionSequence;
+    if (sequenceToUse) {
+      setMotionSequenceData(sequenceToUse);
     }
-  }, [focusPosition]);
+  }, [computedMotionSequence, motionSequence, setMotionSequenceData]);
+
+  // Update assembly progress in camera context when it changes
+  useEffect(() => {
+    updateAssemblyProgress(assemblyProgress);
+  }, [assemblyProgress, updateAssemblyProgress]);
 
   // Handle performance monitoring
   const handlePerformanceUpdate = (stats) => {
@@ -106,7 +186,42 @@ export default function NewThreeDView({ enableDebug = false, showPerformanceStat
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Canvas camera={{ position: [50, 50, 50], fov: 15 }}>
+      {/* Loading overlay during camera computation */}
+      {isComputingCamera && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          color: 'white',
+          fontSize: '18px',
+          fontFamily: 'monospace'
+        }}>
+          <div>Computing Camera Positions...</div>
+          <div style={{ marginTop: '20px', fontSize: '32px', fontWeight: 'bold' }}>
+            {computeProgress}%
+          </div>
+        </div>
+      )}
+      
+      <Canvas camera={{ position: [50, 50, 50], fov: 15 }} style={{ opacity: isComputingCamera ? 0.3 : 1 }}>
+        {/* Capture Three.js scene and pre-compute camera targets */}
+        <SceneCapturer 
+          motionSequence={motionSequence}
+          sceneGraph={sceneGraph}
+          onCameraTargetsComputed={handleCameraTargetsComputed}
+          setProgressCallback={setAssemblyProgress}
+          autoCameraEnabled={autoCameraEnabled}
+          onComputingProgress={handleComputingProgress}
+        />
+        
         {/* Lighting setup */}
         <directionalLight position={[500, 500, 500]} intensity={1} />
         <directionalLight position={[-500, 500, -500]} intensity={1} />
@@ -114,7 +229,10 @@ export default function NewThreeDView({ enableDebug = false, showPerformanceStat
         <directionalLight position={[-500, 500, 500]} intensity={1} />
         <directionalLight position={[0, -500, 0]} intensity={1} />
         
-        {/* Camera controls */}
+        {/* Camera controller - manages automatic camera movement */}
+        <CameraController enabled={autoCameraEnabled} />
+        
+        {/* Camera controls - manual controls, works best when auto-camera is disabled */}
         <OrbitControls
           ref={controlsRef}
           enablePan
@@ -153,15 +271,89 @@ export default function NewThreeDView({ enableDebug = false, showPerformanceStat
       </Canvas>
 
       {/* Debug overlay */}
-      {enableDebug && <DebugOverlay sceneGraph={sceneGraph} assemblyProgress={assemblyProgress} />}
+      {enableDebug && <DebugOverlay sceneGraph={sceneGraph} assemblyProgress={assemblyProgress} activePart={activePart} />}
     </div>
   );
 }
 
 /**
+ * Helper function to generate assembly instruction from part ID
+ */
+function getAssemblyInstruction(partId) {
+  if (!partId) {
+    return "Assembly Instructions";
+  }
+
+  // Normalize: convert dashes to underscores for consistent splitting
+  const normalized = partId.toLowerCase().replace(/-/g, '_');
+  
+  // Component names to split by
+  const componentNames = ['face', 'strip', 'board', 'cube', 'screw', 'piece', 'bar'];
+  
+  // Split the string by component names using regex
+  const pattern = new RegExp(`_(${componentNames.join('|')})_`, 'g');
+  const segments = normalized.split(pattern);
+  
+  // Parse each segment into a readable format
+  const result = [];
+  let i = 0;
+  
+  while (i < segments.length) {
+    const segment = segments[i];
+    
+    // Check if this segment is a component name
+    if (componentNames.includes(segment)) {
+      const componentName = segment.charAt(0).toUpperCase() + segment.slice(1);
+      // Get the next segment which contains the details (location/index)
+      if (i + 1 < segments.length) {
+        const details = segments[i + 1].split('_').filter(s => s);
+        if (details.length > 0) {
+          // Special case for board: board_0_1 -> Board-1 (skip first index)
+          if (segment === 'board' && details.length >= 2) {
+            const boardIndex = details[1]; // Use second index
+            result.push(`${componentName}-${boardIndex}`);
+          } else {
+            // Format: Component-Detail1-Detail2...
+            const formattedDetails = details.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join('-');
+            result.push(`${componentName}-${formattedDetails}`);
+          }
+        } else {
+          result.push(componentName);
+        }
+        i += 2;
+      } else {
+        result.push(componentName);
+        i++;
+      }
+    } else if (segment && !segment.match(/^_+$/)) {
+      // This is the first part (e.g., "face_top" before we hit "strip")
+      const parts = segment.split('_').filter(s => s);
+      if (parts.length > 0) {
+        const componentIdx = parts.findIndex(p => componentNames.includes(p));
+        if (componentIdx !== -1) {
+          const componentName = parts[componentIdx].charAt(0).toUpperCase() + parts[componentIdx].slice(1);
+          const details = parts.slice(componentIdx + 1);
+          if (details.length > 0) {
+            const formattedDetails = details.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join('-');
+            result.push(`${componentName}-${formattedDetails}`);
+          } else {
+            result.push(componentName);
+          }
+        }
+      }
+      i++;
+    } else {
+      i++;
+    }
+  }
+  
+  return result.length > 0 ? `Assembling: ${result.join(' ')}` : `Assembling: ${partId}`;
+}
+
+/**
  * Debug overlay component
  */
-function DebugOverlay({ sceneGraph, assemblyProgress }) {
+function DebugOverlay({ sceneGraph, assemblyProgress, activePart }) {
   const sceneInfo = React.useMemo(() => {
     if (!sceneGraph || Object.keys(sceneGraph).length === 0) {
       return { totalParts: 0, visibleParts: 0, activeParts: 0 };
@@ -190,25 +382,48 @@ function DebugOverlay({ sceneGraph, assemblyProgress }) {
       position: 'absolute',
       top: '10px',
       left: '10px',
-      background: 'rgba(0, 0, 0, 0.8)',
+      background: 'rgba(0, 0, 0, 0.46)',
       color: 'white',
       padding: '10px',
       borderRadius: '5px',
       fontSize: '12px',
       fontFamily: 'monospace',
       zIndex: 1000,
-      minWidth: '200px'
+      minWidth: '250px'
     }}>
-      <h4 style={{ margin: '0 0 10px 0', color: '#4CAF50' }}>Scene Graph Debug</h4>
+      {/* <h4 style={{ margin: '0 0 10px 0', color: '#4CAF50' }}>Scene Graph Debug</h4>
       <div>Progress: {(assemblyProgress * 100).toFixed(1)}%</div>
       <div>Total Parts: {sceneInfo.totalParts}</div>
       <div>Visible Parts: {sceneInfo.visibleParts}</div>
-      <div>Active Parts: {sceneInfo.activeParts}</div>
+      <div>Active Parts: {sceneInfo.activeParts}</div> */}
       
-      <div style={{ marginTop: '10px', fontSize: '10px', color: '#ccc' }}>
+      {/* {activePart && (
+        <div style={{ marginTop: '10px', borderTop: '1px solid #555', paddingTop: '10px' }}>
+          <h5 style={{ margin: '0 0 5px 0', color: '#FF9800' }}>Camera Focus</h5>
+          <div style={{ fontSize: '10px' }}>
+            <div>Part: {activePart.partId.substring(0, 30)}{activePart.partId.length > 30 ? '...' : ''}</div>
+            <div>Motion: {activePart.motion.keyframe_id.substring(0, 25)}{activePart.motion.keyframe_id.length > 25 ? '...' : ''}</div>
+            <div>Progress: {(activePart.progress * 100).toFixed(1)}%</div>
+          </div>
+        </div>
+      )} */}
+      
+      <div style={{ marginTop: '0px', paddingTop: '0px' }}>
+        {/* <h5 style={{ margin: '0 0 5px 0', color: '#2196F3' }}>Assembly Instruction</h5> */}
+        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+          <span style={{ color: cubeColor }}>Assembling: </span>
+          {activePart && (
+            <span style={{ color: '#FFF' }}>
+              {getAssemblyInstruction(activePart.partId).replace('Assembling: ', '')}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      {/* <div style={{ marginTop: '10px', fontSize: '10px', color: '#ccc' }}>
         <div>Press F12 to open console for detailed logs</div>
         <div>Use browser dev tools to inspect scene graph</div>
-      </div>
+      </div> */}
     </div>
   );
 }

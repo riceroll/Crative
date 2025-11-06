@@ -205,6 +205,7 @@ function generateStripParts(boards, faceId, faceName, sceneGraph) {
         pos: stripCenterPos,
         rot: [0, 0, 0],
         children: [],
+        parent: sceneGraph[faceId],
         keyframes: generateStripKeyframes(stripId, stripCenterPos, perpendicularDirection, parseInt(stripIndex) + 1)
       }
     };
@@ -250,6 +251,7 @@ function generateInFaceCubeParts(cubes, faceId, faceName, sceneGraph) {
         pos: cube.final_position,
         rot: cube.final_rotation,
         children: [],
+        parent: sceneGraph[faceId],
         keyframes: generateCubeKeyframes(cubeId, cube)
       }
     };
@@ -282,6 +284,7 @@ function generateInFaceScrewParts(screws, faceId, faceName, sceneGraph) {
         pos: screw.final_position,
         rot: screw.final_rotation,
         children: [],
+        parent: sceneGraph[faceId],
         keyframes: generateScrewKeyframes(screwId, screw)
       }
     };
@@ -314,6 +317,7 @@ function generatePieceParts(pieces, faceId, faceName, sceneGraph) {
         pos: piece.final_position,
         rot: piece.final_rotation,
         children: [],
+        parent: sceneGraph[faceId],
         keyframes: generatePieceKeyframes(pieceId, piece)
       }
     };
@@ -346,6 +350,7 @@ function generateBarParts(bars, faceId, faceName, sceneGraph) {
         pos: bar.final_position,
         rot: bar.final_rotation,
         children: [],
+        parent: sceneGraph[faceId],
         keyframes: generateBarKeyframes(barId, bar)
       }
     };
@@ -390,6 +395,7 @@ function generateBoardParts(boards, stripId, faceName, sceneGraph) {
         pos: relativeBoardPos,
         rot: board.rotation || [0, 0, 0],
         children: [],
+        parent: sceneGraph[stripId],
         keyframes: generateBoardKeyframes(boardId, board, explosionDirection)
       }
     };
@@ -434,6 +440,7 @@ function generateCubeParts(cubeLayouts, sceneGraph) {
           pos: cube.final_position,
           rot: cube.final_rotation,
           children: [],
+          parent: sceneGraph.crate_root,
           keyframes: generateCubeKeyframes(cubeId, cube)
         }
       };
@@ -455,6 +462,7 @@ function generateCubeParts(cubeLayouts, sceneGraph) {
           pos: cube.final_position,
           rot: cube.final_rotation,
           children: [],
+          parent: sceneGraph.crate_root,
           keyframes: generateCubeKeyframes(cubeId, cube)
         }
       };
@@ -494,6 +502,7 @@ function generateScrewParts(screwLayouts, sceneGraph) {
           pos: screw.final_position,
           rot: screw.final_rotation,
           children: [],
+          parent: sceneGraph.crate_root,
           keyframes: generateScrewKeyframes(screwId, screw)
         }
       };
@@ -515,6 +524,7 @@ function generateScrewParts(screwLayouts, sceneGraph) {
           pos: screw.final_position,
           rot: screw.final_rotation,
           children: [],
+          parent: sceneGraph.crate_root,
           keyframes: generateScrewKeyframes(screwId, screw)
         }
       };

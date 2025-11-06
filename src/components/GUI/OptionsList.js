@@ -12,7 +12,7 @@ export default function OptionsList() {
     >
       <div
       className='card-title'
-      >Crate Designs</div>
+      >Candidate Designs</div>
       {candidateCrates.map(opt => (
         <OptionCard
           key={opt.id}

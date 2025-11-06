@@ -104,24 +104,23 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
     }
   }, [computedSceneGraph, enableDebugLogging, enablePerformanceMonitoring]);
 
-  // Update scene graph and motion sequence state
-  useEffect(() => {
-    setSceneGraph(computedSceneGraph);
-    setMotionSequence(computedMotionSequence);
-  }, [computedSceneGraph, computedMotionSequence]);
-
-  // Update current states when progress changes
-  useEffect(() => {
-    // if (!sceneGraph || !motionSequence || Object.keys(sceneGraph).length === 0) {
-    //   return;
-    // }
+  // Compute updated scene graph with current states based on progress
+  const { updatedSceneGraph, activePart } = useMemo(() => {
+    if (!computedSceneGraph || !computedMotionSequence || Object.keys(computedSceneGraph).length === 0) {
+      return { updatedSceneGraph: computedSceneGraph, activePart: null };
+    }
 
     try {
       const startTime = performance.now();
-      const updatedGraph = updateCurrentStates(sceneGraph, assemblyProgress, motionSequence);
+      const { sceneGraph: updatedGraph, activePart: currentActivePart } = updateCurrentStates(
+        computedSceneGraph, 
+        assemblyProgress, 
+        computedMotionSequence
+      );
 
       window.sceneGraph = updatedGraph; // For debugging
-      window.motionSequence = motionSequence; // For debugging
+      window.motionSequence = computedMotionSequence; // For debugging
+      window.activePart = currentActivePart; // For debugging
       
       const endTime = performance.now();
 
@@ -135,19 +134,23 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
 
       if (enableDebugLogging) {
         debugCurrentStates(updatedGraph, assemblyProgress);
+        if (currentActivePart) {
+          console.log('[useSceneGraph] Active part:', currentActivePart);
+        }
       }
 
-      setSceneGraph(updatedGraph);
+      return { updatedSceneGraph: updatedGraph, activePart: currentActivePart };
     } catch (error) {
       console.error('[useSceneGraph] Error updating current states:', error);
       setComputationError(error);
+      return { updatedSceneGraph: computedSceneGraph, activePart: null };
     }
-  }, [assemblyProgress, motionSequence, enableDebugLogging, enablePerformanceMonitoring]);
+  }, [computedSceneGraph, computedMotionSequence, assemblyProgress, enableDebugLogging, enablePerformanceMonitoring]);
 
   // Auto-export scene state when it changes (for debugging)
   useEffect(() => {
-    if (autoExportOnChange && sceneGraph && Object.keys(sceneGraph).length > 0) {
-      const exportData = exportSceneState(sceneGraph);
+    if (autoExportOnChange && updatedSceneGraph && Object.keys(updatedSceneGraph).length > 0) {
+      const exportData = exportSceneState(updatedSceneGraph);
       console.log('[useSceneGraph] Auto-exported scene state:', exportData);
       
       // Optionally save to localStorage for debugging
@@ -157,16 +160,16 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
         console.warn('[useSceneGraph] Could not save to localStorage:', e);
       }
     }
-  }, [sceneGraph, autoExportOnChange]);
+  }, [updatedSceneGraph, autoExportOnChange]);
 
   // Manual export function
   const exportCurrentState = useCallback(() => {
-    if (!sceneGraph || Object.keys(sceneGraph).length === 0) {
+    if (!updatedSceneGraph || Object.keys(updatedSceneGraph).length === 0) {
       console.warn('[useSceneGraph] No scene graph to export');
       return null;
     }
 
-    const exportData = exportSceneState(sceneGraph);
+    const exportData = exportSceneState(updatedSceneGraph);
     
     // Create downloadable JSON file
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
@@ -182,33 +185,33 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
     URL.revokeObjectURL(url);
 
     return exportData;
-  }, [sceneGraph]);
+  }, [updatedSceneGraph]);
 
   // Debug functions
   const debugFunctions = useMemo(() => ({
     logSceneGraph: () => {
-      console.log('[useSceneGraph] Current scene graph:', sceneGraph);
-      return sceneGraph;
+      console.log('[useSceneGraph] Current scene graph:', updatedSceneGraph);
+      return updatedSceneGraph;
     },
     logMotionSequence: () => {
-      if (motionSequence) {
-        debugMotionSequence(motionSequence);
+      if (computedMotionSequence) {
+        debugMotionSequence(computedMotionSequence);
       } else {
         console.log('[useSceneGraph] No motion sequence available');
       }
-      return motionSequence;
+      return computedMotionSequence;
     },
     logCurrentStates: () => {
-      debugCurrentStates(sceneGraph, assemblyProgress);
-      return sceneGraph;
+      debugCurrentStates(updatedSceneGraph, assemblyProgress);
+      return updatedSceneGraph;
     },
     exportState: exportCurrentState,
     getPerformanceStats: () => performanceStats
-  }), [sceneGraph, motionSequence, assemblyProgress, performanceStats, exportCurrentState]);
+  }), [updatedSceneGraph, computedMotionSequence, assemblyProgress, performanceStats, exportCurrentState]);
 
   // Computed properties
   const sceneInfo = useMemo(() => {
-    if (!sceneGraph || Object.keys(sceneGraph).length === 0) {
+    if (!updatedSceneGraph || Object.keys(updatedSceneGraph).length === 0) {
       return {
         totalParts: 0,
         visibleParts: 0,
@@ -217,7 +220,7 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
       };
     }
 
-    const parts = Object.values(sceneGraph);
+    const parts = Object.values(updatedSceneGraph);
     const visibleParts = parts.filter(part => 
       part.properties.current_state.alpha > 0
     );
@@ -240,10 +243,10 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
       activeParts: activeParts.length,
       partTypes
     };
-  }, [sceneGraph]);
+  }, [updatedSceneGraph]);
 
   const animationInfo = useMemo(() => {
-    if (!motionSequence) {
+    if (!computedMotionSequence) {
       return {
         totalDuration: 0,
         totalMotions: 0,
@@ -252,23 +255,24 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
       };
     }
 
-    const currentTime = assemblyProgress * motionSequence.totalDuration;
-    const activeMotions = motionSequence.motions.filter(motion => 
+    const currentTime = assemblyProgress * computedMotionSequence.totalDuration;
+    const activeMotions = computedMotionSequence.motions.filter(motion => 
       currentTime >= motion.startTime && currentTime <= motion.endTime
     );
 
     return {
-      totalDuration: motionSequence.totalDuration,
-      totalMotions: motionSequence.motions.length,
+      totalDuration: computedMotionSequence.totalDuration,
+      totalMotions: computedMotionSequence.motions.length,
       currentTime,
       activeMotions: activeMotions.length
     };
-  }, [motionSequence, assemblyProgress]);
+  }, [computedMotionSequence, assemblyProgress]);
 
   return {
     // Core data
-    sceneGraph,
-    motionSequence,
+    sceneGraph: updatedSceneGraph,
+    motionSequence: computedMotionSequence,
+    activePart,
     
     // State
     isComputing,
@@ -291,7 +295,7 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
  * @returns {Object} Basic scene graph data
  */
 export function useSimpleSceneGraph(selectedCandidate, assemblyProgress) {
-  const { sceneGraph, isComputing, computationError } = useSceneGraph(
+  const { sceneGraph, activePart, motionSequence, isComputing, computationError } = useSceneGraph(
     selectedCandidate, 
     assemblyProgress, 
     { enableDebugLogging: false, enablePerformanceMonitoring: false }
@@ -299,6 +303,8 @@ export function useSimpleSceneGraph(selectedCandidate, assemblyProgress) {
 
   return {
     sceneGraph,
+    activePart,
+    motionSequence,
     isLoading: isComputing,
     error: computationError
   };

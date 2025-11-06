@@ -45,7 +45,7 @@ export default function InputForm() {
             className="unit-dropdown"
           >
             <option value="cm">cm</option>
-            <option value="inch">inch</option>
+            <option value="inch">in</option>
           </select>
         </div>
 
@@ -71,7 +71,7 @@ export default function InputForm() {
           }}
         />
         <label>
-          {useInch ? 'inch' : 'cm'}
+          {useInch ? 'in' : 'cm'}
         </label>
 
         <label className='input-form-label' htmlFor="depth">
@@ -92,7 +92,7 @@ export default function InputForm() {
           }}
         />
         <label>
-          {useInch ? 'inch' : 'cm'}
+          {useInch ? 'in' : 'cm'}
         </label>
 
         <label className='input-form-label' htmlFor="height">
@@ -113,7 +113,7 @@ export default function InputForm() {
           }}
         />
         <label>
-          {useInch ? 'inch' : 'cm'}
+          {useInch ? 'in' : 'cm'}
         </label>
       </div>
     </form>
