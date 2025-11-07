@@ -25,7 +25,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       <div className='sidebar'>
-        <LogoCard />
+        {/* <LogoCard /> */}
         <InputForm />
         <OptionsList />
         <VisualizationOptions /> 

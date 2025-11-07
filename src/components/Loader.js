@@ -6,11 +6,17 @@ export default function Loader() {
     <div style={{
       position: 'fixed', top: 0, left: 0,
       width: '100vw', height: '100vh',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#111', color: '#fff', fontSize: '1.5rem',
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: '#F2F3F5', 
+      color: '#000', 
+      fontSize: '1.5rem',
       zIndex: 999
     }}>
-      Loading 3D assets…
+      <div className="loader-spinner"></div>
+      <div style={{ marginTop: '20px' }}>Loading 3D assets…</div>
     </div>
   )
 }
