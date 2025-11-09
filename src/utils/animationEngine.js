@@ -46,9 +46,9 @@ export function createMotionSequence(sceneGraph) {
     pattern = new RegExp(`face_${faceName}_piece_\\d+_initial$`);
     collectKeyframesMatchingPattern(pattern);
 
-    // in-face bar initial phase
-    pattern = new RegExp(`face_${faceName}_bar_\\d+_initial$`);
-    collectKeyframesMatchingPattern(pattern);
+    // in-face bar initial phase - HIDDEN: commented out to hide bars
+    // pattern = new RegExp(`face_${faceName}_bar_\\d+_initial$`);
+    // collectKeyframesMatchingPattern(pattern);
 
     // face flat phase
     pattern = new RegExp(`^face_${faceName}_flat$`);
@@ -58,9 +58,9 @@ export function createMotionSequence(sceneGraph) {
     pattern = new RegExp(`face_${faceName}_cube_\\d+_initial$`);
     collectKeyframesMatchingPattern(pattern);
 
-    // face screw initial phase
-    pattern = new RegExp(`face_${faceName}_screw_\\d+_initial$`);
-    collectKeyframesMatchingPattern(pattern);
+    // face screw initial phase - HIDDEN: commented out to hide screws
+    // pattern = new RegExp(`face_${faceName}_screw_\\d+_initial$`);
+    // collectKeyframesMatchingPattern(pattern);
 
   }
 
@@ -83,9 +83,9 @@ export function createMotionSequence(sceneGraph) {
   let pattern = /^cube_(corner|edge)_\d+_initial$/;
   collectKeyframesMatchingPattern(pattern);
 
-  // screw initial phase
-  pattern = /^screw_(corner|edge)_\d+_initial$/;
-  collectKeyframesMatchingPattern(pattern);
+  // screw initial phase - HIDDEN: commented out to hide screws
+  // pattern = /^screw_(corner|edge)_\d+_initial$/;
+  // collectKeyframesMatchingPattern(pattern);
 
   // Add motions to sequence with timing and pre-computed camera targets
   phaseMotions.forEach((motion, index) => {

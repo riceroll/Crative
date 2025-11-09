@@ -83,15 +83,15 @@ export function computeSceneGraph(selectedCandidate) {
   const cubeChildren = generateCubeParts(selectedCandidate.cubeLayouts, sceneGraph);
   sceneGraph['crate_root'].properties.children.push(...cubeChildren);
 
-  // Generate screw parts
-  const screwChildren = generateScrewParts(selectedCandidate.screwLayouts, sceneGraph);
-  sceneGraph['crate_root'].properties.children.push(...screwChildren);
+  // Generate screw parts - HIDDEN: commented out to hide screws
+  // const screwChildren = generateScrewParts(selectedCandidate.screwLayouts, sceneGraph);
+  // sceneGraph['crate_root'].properties.children.push(...screwChildren);
 
   debugLogger.log('computeSceneGraph_complete', {
     totalParts: Object.keys(sceneGraph).length,
     faceChildren: faceChildren.length,
     cubeChildren: cubeChildren.length,
-    screwChildren: screwChildren.length
+    // screwChildren: screwChildren.length
   });
 
   return sceneGraph;
@@ -140,13 +140,13 @@ function generateFaceParts(faceLayouts, sceneGraph) {
     const pieceChildren = generatePieceParts(faceData.pieces, faceId, faceName, sceneGraph);
     sceneGraph[faceId].properties.children.push(...pieceChildren);
 
-    // Generate bar parts for this face
-    const barChildren = generateBarParts(faceData.bars, faceId, faceName, sceneGraph);
-    sceneGraph[faceId].properties.children.push(...barChildren);
+    // Generate bar parts for this face - HIDDEN: commented out to hide bars
+    // const barChildren = generateBarParts(faceData.bars, faceId, faceName, sceneGraph);
+    // sceneGraph[faceId].properties.children.push(...barChildren);
 
-    // Generate screw parts for this face
-    const screwChildren = generateInFaceScrewParts(faceData.screws, faceId, faceName, sceneGraph);
-    sceneGraph[faceId].properties.children.push(...screwChildren);
+    // Generate screw parts for this face - HIDDEN: commented out to hide screws
+    // const screwChildren = generateInFaceScrewParts(faceData.screws, faceId, faceName, sceneGraph);
+    // sceneGraph[faceId].properties.children.push(...screwChildren);
 
     debugLogger.log('generateFaceParts_face', {
       faceId,
