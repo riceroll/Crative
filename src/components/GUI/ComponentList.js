@@ -87,23 +87,26 @@ export default function ComponentList() {
             : <table id="component-list-table" className="component-table" style={{width:'100%'}}>
                 <thead>
                   <tr>
-                    <th>Part</th>
-                    <th>Quantity</th>
+                    <th className="color-bar-col"></th>
+                    <th className="thumbnail-col"></th>
+                    <th className="part-name-col">Part Name</th>
+                    <th className="quantity-col">Qty</th>
                     <th className="unit-price-col">Unit Price</th>
-                    <th>Cost</th>
+                    <th className="cost-col">Cost</th>
                   </tr>
                 </thead>
                 <tbody>
                   {components.map((item, index)=>(
                     <tr key={item.type} style={{borderTop: index === 0 ? '1px solid #ccc' : 'none'}}>
-                      <td className="component-table-cell component-table-image-cell">
+                      <td className="component-table-cell color-bar-col">
                         <span
                           className="component-color-bar"
                           style={{
                             background: item.type === 'cube' ? cubeColor : item.color,
                             verticalAlign: 'middle'
                           }}></span>
-
+                      </td>
+                      <td className="component-table-cell thumbnail-col">
                         <img
                           src={`./images/${item.imageName}.png`}
                           alt={item.name}
@@ -115,20 +118,22 @@ export default function ComponentList() {
                           onMouseMove={e => setHoverPos({ x: e.clientX, y: e.clientY })}
                           onMouseLeave={() => setHoveredImg(null)}
                         />
-                        <span>
-                          {item.name}
-                        </span>
                       </td>
-                      <td className="component-table-cell component-table-count">{item.count}</td>
+                      <td className="component-table-cell part-name-col">
+                        {item.name}
+                      </td>
+                      <td className="component-table-cell quantity-col">{item.count}</td>
                       <td className="component-table-cell unit-price-col">$ {Math.round(item.unitPrice * 100) / 100}</td>
-                      <td className="component-table-cell total-cost-col">$ {Math.round(item.totalCost * 100) / 100}</td>
+                      <td className="component-table-cell cost-col">$ {Math.round(item.totalCost * 100) / 100}</td>
                     </tr>
                   ))}
                   <tr className="total-row">
-                    <td className="component-table-cell" style={{fontWeight:'bold'}}>Grand Total:</td>
-
-                    <td className="component-table-cell" style={{fontWeight:'bold'}}></td>
-                    <td className="component-table-cell" style={{fontWeight:'bold'}}>$ {Math.round(totalAllCost * 100) / 100}</td>
+                    <td className="component-table-cell color-bar-col" style={{fontWeight:'bold'}}></td>
+                    <td className="component-table-cell thumbnail-col" style={{fontWeight:'bold'}}></td>
+                    <td className="component-table-cell part-name-col" style={{fontWeight:'bold'}}>Grand Total:</td>
+                    <td className="component-table-cell quantity-col" style={{fontWeight:'bold'}}></td>
+                    <td className="component-table-cell unit-price-col" style={{fontWeight:'bold'}}></td>
+                    <td className="component-table-cell cost-col" style={{fontWeight:'bold'}}>$ {Math.round(totalAllCost * 100) / 100}</td>
                   </tr>
                 </tbody>
               </table>
