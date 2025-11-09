@@ -34,14 +34,11 @@ function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, se
     }
   }, [scene, setThreeScene]);
   
-  // Reset hasComputedRef when auto camera is turned on
+  // Reset hasComputedRef when scene graph or motion sequence changes
   useEffect(() => {
-    if (autoCameraEnabled && !lastAutoCameraRef.current) {
-      // Auto camera was just turned ON
-      hasComputedRef.current = false;
-    }
-    lastAutoCameraRef.current = autoCameraEnabled;
-  }, [autoCameraEnabled]);
+    // When scene graph or motion sequence changes, mark as not computed
+    hasComputedRef.current = false;
+  }, [sceneGraph, motionSequence]);
   
   // Pre-compute camera targets when all dependencies are ready and auto camera is enabled
   useEffect(() => {

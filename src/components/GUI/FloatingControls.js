@@ -1,0 +1,31 @@
+import React, { useContext } from 'react';
+import { CrateContext } from '../../store/CrateContext';
+import { IoColorPalette } from 'react-icons/io5';
+import { MdVideocam } from 'react-icons/md';
+import '../../styles/floatingControls.css';
+
+export default function FloatingControls() {
+  const { visualizeBoardTypes, toggleVisualizeBoardTypes, autoCameraEnabled, toggleAutoCameraEnabled } = useContext(CrateContext);
+
+  return (
+    <div className="floating-controls">
+      {/* Board Type Visualization Toggle */}
+      <button
+        className={`floating-button ${visualizeBoardTypes ? 'active' : ''}`}
+        onClick={toggleVisualizeBoardTypes}
+        title="Toggle Board Type Colors"
+      >
+        <IoColorPalette size={24} />
+      </button>
+
+      {/* Auto Camera Toggle */}
+      <button
+        className={`floating-button ${autoCameraEnabled ? 'active' : ''}`}
+        onClick={toggleAutoCameraEnabled}
+        title="Toggle Auto Camera"
+      >
+        <MdVideocam size={24} />
+      </button>
+    </div>
+  );
+}

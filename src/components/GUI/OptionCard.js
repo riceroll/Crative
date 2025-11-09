@@ -16,7 +16,8 @@ export default function OptionCard({ option, selected, onSelect }) {
               display: 'inline-flex',
               margin: '0 4px',
               marginLeft: '0',
-              padding: '2px 4px'
+              padding: '2px 4px',
+              backgroundColor: 'rgb(255, 176, 4, 0.6)'
             }}
           >
             {label === 'Balanced' ? label : 'Min '}

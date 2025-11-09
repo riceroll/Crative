@@ -1,0 +1,70 @@
+/* Floating Controls - Bottom Right Corner */
+.floating-controls {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1000;
+}
+
+.floating-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: #666;
+  backdrop-filter: blur(10px);
+  opacity: 0.5;
+}
+
+.floating-button:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.floating-button.active {
+  background: #FFB004;
+  color: white;
+  box-shadow: 0 6px 20px rgba(255, 176, 4, 0.4);
+  opacity: 0.5;
+}
+
+.floating-button.active:hover {
+  background: #E69E03;
+  box-shadow: 0 8px 24px rgba(255, 176, 4, 0.5);
+  opacity: 0.9;
+}
+
+.floating-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .floating-controls {
+    bottom: 120px;
+    right: 15px;
+  }
+  
+  .floating-button {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .floating-button svg {
+    width: 20px;
+    height: 20px;
+  }
+}

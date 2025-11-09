@@ -42,8 +42,8 @@
     --primary-very-light: #c4e1f6;
     --primary-dark: #345684;
 
-    --highlight-primary: #FFD700;
-    --highlight-secondary: #FFA500;
+    --highlight-primary: #FFB004;
+    --highlight-secondary: #E69E03;
 
     --color-0: #F4809E;
     --color-1: #E3ACCA;
@@ -488,22 +488,22 @@
 }
 
 .option-label-Price {
-  background-color: rgba(255, 215, 0, 0.4);
+  background-color: rgba(255, 176, 4, 1);
   font-size: var(--font-size-small);
 }
 
 .option-label-Boards {
-  background-color: rgba(255, 215, 0, 0.4);
+  background-color: rgba(255, 176, 4, 0.5);
   font-size: var(--font-size-small);
 }
 
 .option-label-Volume {
-  background-color: rgba(255, 215, 0, 0.4);
+  background-color: rgba(255, 176, 4, 0.5);
   font-size: var(--font-size-small);
 }
 
 .option-label-Balanced {
-  background-color: rgba(255, 215, 0, 0.4);
+  background-color: rgba(255, 176, 4, 0.5);
   font-size: var(--font-size-small);
 }
 
@@ -662,8 +662,8 @@
 .fullscreen-slider {
   position: absolute !important;
   bottom: 20px;
-  left: 2%;
-  right: 2%;
+  left: 20px;
+  right: 20px;
   width: auto !important;
   max-width: none !important;
   padding: 10px 20px !important;

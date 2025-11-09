@@ -6,9 +6,30 @@ import { convertToInches, convertToDisplay } from '../utils/utils';
 export const CrateContext = createContext(null);
 
 export function CrateProvider({ children }) {
+  // Initialize dimensions from URL parameters or use defaults
+  const getInitialDimensions = () => {
+    const params = new URLSearchParams(window.location.search);
+    const width = params.get('width');
+    const height = params.get('height');
+    const depth = params.get('depth');
+    
+    return {
+      width: width ? Number(width) : 40,
+      height: height ? Number(height) : 40,
+      depth: depth ? Number(depth) : 40
+    };
+  };
+
   // Rename dims to innerDims to indicate these dimensions belong to the target object
-  const [innerDims, setInnerDims] = useState({ width: 40, height: 40, depth: 40 });
-  const [displayDims, setDisplayDims] = useState({ width: '40', height: '40', depth: '40' });
+  const [innerDims, setInnerDims] = useState(getInitialDimensions());
+  const [displayDims, setDisplayDims] = useState(() => {
+    const initial = getInitialDimensions();
+    return {
+      width: String(initial.width),
+      height: String(initial.height),
+      depth: String(initial.depth)
+    };
+  });
 
   const [candidateCrates, setCandidateCrates] = useState([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);

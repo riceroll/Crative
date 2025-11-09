@@ -6,12 +6,17 @@ import VisualizationOptions from './components/GUI/VisualizationOptions'
 import BoardTypeFilter from './components/GUI/BoardTypeFilter'
 import ComponentList from './components/GUI/ComponentList'
 import ProgressSlider from './components/GUI/ProgressSlider'
+import FloatingControls from './components/GUI/FloatingControls'
 import SceneGraphTester from './components/SceneGraphTester'
 import { DevThreeDView } from './components/NewThreeDView'
 import { ProdThreeDView } from './components/NewThreeDView'
 import './App.css'
 
 export default function App() {
+  // Check URL parameter for hiding UI
+  const params = new URLSearchParams(window.location.search);
+  const hideUI = params.get('hideUI') === 'true';
+
   // For development, you can switch between different views
   const isDevelopment = process.env.NODE_ENV === 'development'
   const useSceneGraphTester = true // Set to false to use the regular layout
@@ -27,15 +32,18 @@ export default function App() {
       <div className='main-content' style={{ flex: 1 }}>
         {isDevelopment ? <DevThreeDView /> : <ProdThreeDView />}
         <ProgressSlider />
+        {hideUI && <FloatingControls />}
       </div>
-      <div className='sidebar'>
-        {/* <LogoCard /> */}
-        <InputForm />
-        <OptionsList />
-        <VisualizationOptions /> 
-        {/* <BoardTypeFilter /> */}
-        <ComponentList />
-      </div>
+      {!hideUI && (
+        <div className='sidebar'>
+          {/* <LogoCard /> */}
+          <InputForm />
+          <OptionsList />
+          <VisualizationOptions /> 
+          {/* <BoardTypeFilter /> */}
+          <ComponentList />
+        </div>
+      )}
     </div>
   )
 }
