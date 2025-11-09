@@ -12,28 +12,30 @@ export default function VisualizationOptions() {
 
   return (
     <div className="card">
-      <div className="toggle-container" style={{ marginBottom: '12px' }}> 
-        <label className="toggle-switch">
-          <input
-            type="checkbox"
-            checked={visualizeBoardTypes}
-            onChange={toggleVisualizeBoardTypes}
-          />
-          <span className="slider"></span>
-        </label>
-        <span className="toggle-label">Visualize Board Types</span>
-      </div>
-      
-      <div className="toggle-container">
-        <label className="toggle-switch">
-          <input
-            type="checkbox"
-            checked={autoCameraEnabled}
-            onChange={toggleAutoCameraEnabled}
-          />
-          <span className="slider"></span>
-        </label>
-        <span className="toggle-label">Auto Camera</span>
+      <div className="visualization-options-mobile">
+        <div className="toggle-container">
+          <label className="toggle-switch">
+            <input 
+              type="checkbox" 
+              checked={visualizeBoardTypes} 
+              onChange={toggleVisualizeBoardTypes} 
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="toggle-label">Board Types</span>
+        </div>
+        
+        <div className="toggle-container">
+          <label className="toggle-switch">
+            <input 
+              type="checkbox" 
+              checked={autoCameraEnabled} 
+              onChange={toggleAutoCameraEnabled} 
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="toggle-label">Auto Camera</span>
+        </div>
       </div>
     </div>
   );

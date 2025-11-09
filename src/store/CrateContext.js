@@ -24,6 +24,24 @@ export function CrateProvider({ children }) {
     'board_5x5'
   ]);
 
+  // Collapsible cards state - detect mobile on mount
+  const [collapsedCards, setCollapsedCards] = useState(() => {
+    const isMobile = window.innerWidth <= 768;
+    return {
+      inputForm: false,
+      optionsList: isMobile, // Collapsed by default on mobile
+      visualizationOptions: false,
+      componentList: isMobile // Collapsed by default on mobile
+    };
+  });
+
+  const toggleCardCollapse = (cardName) => {
+    setCollapsedCards(prev => ({
+      ...prev,
+      [cardName]: !prev[cardName]
+    }));
+  };
+
   // Recompute candidate crates whenever innerDims or boardTypesToExclude change
   useEffect(() => {
     // Calculate new candidate crates
@@ -103,7 +121,9 @@ export function CrateProvider({ children }) {
         focusPosition,
         setFocusPosition,
         boardTypesToExclude, // <-- Expose board exclusion state
-        setBoardTypesToExclude // <-- Expose board exclusion setter
+        setBoardTypesToExclude, // <-- Expose board exclusion setter
+        collapsedCards, // <-- Expose collapsed cards state
+        toggleCardCollapse // <-- Expose toggle function
       }}
     >
       {children}

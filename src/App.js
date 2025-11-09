@@ -23,7 +23,11 @@ export default function App() {
 
   // Regular app layout with new scene graph system
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
+    <div className='app-container' style={{ display: 'flex', height: '100vh' }}>
+      <div className='main-content' style={{ flex: 1 }}>
+        {isDevelopment ? <DevThreeDView /> : <ProdThreeDView />}
+        <ProgressSlider />
+      </div>
       <div className='sidebar'>
         {/* <LogoCard /> */}
         <InputForm />
@@ -31,10 +35,6 @@ export default function App() {
         <VisualizationOptions /> 
         {/* <BoardTypeFilter /> */}
         <ComponentList />
-        <ProgressSlider />
-      </div>
-      <div style={{ flex: 1 }}>
-        {isDevelopment ? <DevThreeDView /> : <ProdThreeDView />}
       </div>
     </div>
   )

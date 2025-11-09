@@ -8,7 +8,7 @@ export const colors = [
     '#8FA6CA'
 ];
 
-export const cubeColor = "#F6D33C";
+export const cubeColor = "#FFD700";
 
 export const defaultColor = '#555'; // Default color for boards
 

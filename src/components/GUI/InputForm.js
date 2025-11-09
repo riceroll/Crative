@@ -31,10 +31,10 @@ export default function InputForm() {
       className='card'
       onSubmit={handleSubmit}
     >
-      <div className='card-title'>
-        Cargo Dimensions
+      <div className='card-title' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Cargo Dimensions</span>
 
-        <div className="unit-selector dropdown-switch toggle-inches">
+        <div className="unit-selector dropdown-switch">
           <select
             value={useInch ? 'inch' : 'cm'}
             onChange={(e) => {
@@ -54,7 +54,7 @@ export default function InputForm() {
       {/* Grid container with two columns: one for labels, one for inputs */}
       <div className='input-form-grid'>
         <label className='input-form-label' htmlFor="width">
-          Width :
+          Width:
         </label>
         <input
           className="number-input"
@@ -75,7 +75,7 @@ export default function InputForm() {
         </label>
 
         <label className='input-form-label' htmlFor="depth">
-          Depth :
+          Depth:
         </label>
         <input
           className="number-input"
@@ -96,7 +96,7 @@ export default function InputForm() {
         </label>
 
         <label className='input-form-label' htmlFor="height">
-          Height :
+          Height:
         </label>
         <input
           className="number-input"

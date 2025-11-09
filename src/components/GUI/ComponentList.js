@@ -4,6 +4,7 @@ import { CrateContext } from '../../store/CrateContext';
 import { boardTypes, cubePrice, getBoardPrice, screwPrice, stickPrice, piecePrice } from '../../configs/boardConfig';
 import '../../styles/ui.css';
 import { LuPrinter } from 'react-icons/lu';
+import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import { colors, defaultColor, cubeColor, screwColor, pieceColor, stickColor } from '../../configs/globalConfigs';
 
 
@@ -17,10 +18,13 @@ const getBoardImageName = (boardType) => {
 
 export default function ComponentList() {
   const { selectedCandidate, visualizeBoardTypes } = useContext(CrateContext);
+  const { collapsedCards, toggleCardCollapse } = useContext(CrateContext);
   const componentRef = useRef();
   const triggerPrint = useReactToPrint({ contentRef: componentRef, documentTitle: `Component List – ${selectedCandidate?.id}` });
   const [hoveredImg, setHoveredImg] = useState(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
+
+  const isCollapsed = collapsedCards.componentList;
 
   // build items
   const components = [];
@@ -56,70 +60,81 @@ export default function ComponentList() {
 
   return (
     <div className="card">
-      <div style={{ display:'flex', justifyContent:'space-between' }}>
-        <div className="card-title">Parts List</div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems: 'center' }}>
+        <div 
+          className="card-title collapsible-title"
+          onClick={() => toggleCardCollapse('componentList')}
+          style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', marginBottom: 0, borderBottom: 'none' }}
+        >
+          <span>Parts List</span>
+          <span className='collapse-icon'>
+            {isCollapsed ? <IoChevronDown /> : <IoChevronUp />}
+          </span>
+        </div>
         {components.length>0 && (
-          <div onClick={triggerPrint} style={{background:'none',border:'none',cursor:'pointer'}}>
+          <div onClick={triggerPrint} style={{background:'none',border:'none',cursor:'pointer',padding:'4px'}}>
             <LuPrinter size="14px" color="#555"/>
           </div>
         )}
       </div>
 
-      <div ref={componentRef} className="printable-component-list">
-        {components.length===0
-          ? <p style={{padding:'10px',color:'#888'}}>
-              {selectedCandidate ? 'No components data.' : 'Select a crate design.'}
-            </p>
-          : <table id="component-list-table" className="component-table" style={{width:'100%'}}>
-              <thead>
-                <tr>
-                  <th>Part</th>
-                  <th>Quantity</th>
-                  <th className="unit-price-col">Unit Price</th>
-                  <th>Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {components.map((item, index)=>(
-                  <tr key={item.type} style={{borderTop: index === 0 ? '1px solid #ccc' : 'none'}}>
-                    <td className="component-table-cell component-table-image-cell">
-                      <span
-                        className="component-color-bar"
-                        style={{
-                          background: item.type === 'cube' ? cubeColor : item.color,
-                          verticalAlign: 'middle'
-                        }}></span>
-
-                      <img
-                        src={`./images/${item.imageName}.png`}
-                        alt={item.name}
-                        className="component-image"
-                        onMouseEnter={e => {
-                          setHoveredImg(`./images/${item.imageName}.png`);
-                          setHoverPos({ x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseMove={e => setHoverPos({ x: e.clientX, y: e.clientY })}
-                        onMouseLeave={() => setHoveredImg(null)}
-                      />
-                      <span>
-                        {item.name}
-                      </span>
-                    </td>
-                    <td className="component-table-cell component-table-count">{item.count}</td>
-                    <td className="component-table-cell unit-price-col">$ {Math.round(item.unitPrice * 100) / 100}</td>
-                    <td className="component-table-cell total-cost-col">$ {Math.round(item.totalCost * 100) / 100}</td>
+      {!isCollapsed && (
+        <div ref={componentRef} className="printable-component-list">
+          {components.length===0
+            ? <p style={{padding:'10px',color:'#888'}}>
+                {selectedCandidate ? 'No components data.' : 'Select a crate design.'}
+              </p>
+            : <table id="component-list-table" className="component-table" style={{width:'100%'}}>
+                <thead>
+                  <tr>
+                    <th>Part</th>
+                    <th>Quantity</th>
+                    <th className="unit-price-col">Unit Price</th>
+                    <th>Cost</th>
                   </tr>
-                ))}
-                <tr className="total-row">
-                  <td className="component-table-cell" style={{fontWeight:'bold'}}>Grand Total:</td>
+                </thead>
+                <tbody>
+                  {components.map((item, index)=>(
+                    <tr key={item.type} style={{borderTop: index === 0 ? '1px solid #ccc' : 'none'}}>
+                      <td className="component-table-cell component-table-image-cell">
+                        <span
+                          className="component-color-bar"
+                          style={{
+                            background: item.type === 'cube' ? cubeColor : item.color,
+                            verticalAlign: 'middle'
+                          }}></span>
 
-                  <td className="component-table-cell" style={{fontWeight:'bold'}}></td>
-                  <td className="component-table-cell" style={{fontWeight:'bold'}}>$ {Math.round(totalAllCost * 100) / 100}</td>
-                </tr>
-              </tbody>
-            </table>
-        }
-      </div>
+                        <img
+                          src={`./images/${item.imageName}.png`}
+                          alt={item.name}
+                          className="component-image"
+                          onMouseEnter={e => {
+                            setHoveredImg(`./images/${item.imageName}.png`);
+                            setHoverPos({ x: e.clientX, y: e.clientY });
+                          }}
+                          onMouseMove={e => setHoverPos({ x: e.clientX, y: e.clientY })}
+                          onMouseLeave={() => setHoveredImg(null)}
+                        />
+                        <span>
+                          {item.name}
+                        </span>
+                      </td>
+                      <td className="component-table-cell component-table-count">{item.count}</td>
+                      <td className="component-table-cell unit-price-col">$ {Math.round(item.unitPrice * 100) / 100}</td>
+                      <td className="component-table-cell total-cost-col">$ {Math.round(item.totalCost * 100) / 100}</td>
+                    </tr>
+                  ))}
+                  <tr className="total-row">
+                    <td className="component-table-cell" style={{fontWeight:'bold'}}>Grand Total:</td>
+
+                    <td className="component-table-cell" style={{fontWeight:'bold'}}></td>
+                    <td className="component-table-cell" style={{fontWeight:'bold'}}>$ {Math.round(totalAllCost * 100) / 100}</td>
+                  </tr>
+                </tbody>
+              </table>
+          }
+        </div>
+      )}
       {hoveredImg && (
         <div
           className="hover-preview"
