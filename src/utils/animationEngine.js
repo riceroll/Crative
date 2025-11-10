@@ -95,6 +95,26 @@ export function createMotionSequence(sceneGraph) {
 
     const part = sceneGraph[motion.part_id];
     
+    // Filter out motions with no actual movement
+    const currentKeyframe = motion.keyframe;
+    const nextKeyframe = getNextKeyframe(part, motion.keyframe_id);
+    
+    if (nextKeyframe) {
+      // Check if position and rotation are identical
+      const posIdentical = currentKeyframe.pos[0] === nextKeyframe.pos[0] &&
+                          currentKeyframe.pos[1] === nextKeyframe.pos[1] &&
+                          currentKeyframe.pos[2] === nextKeyframe.pos[2];
+      
+      const rotIdentical = currentKeyframe.rot[0] === nextKeyframe.rot[0] &&
+                          currentKeyframe.rot[1] === nextKeyframe.rot[1] &&
+                          currentKeyframe.rot[2] === nextKeyframe.rot[2];
+      
+      // Skip this motion if both position and rotation are identical
+      if (posIdentical && rotIdentical) {
+        return; // Skip adding this motion
+      }
+    }
+    
     // Pre-compute camera focus target (world position) for this motion
     const cameraFocusTarget = computeCameraFocusTargetForMotion(part, motion.keyframe, sceneGraph);
     const cameraDistance = calculateOptimalDistanceForMotion(part, motion.keyframe);

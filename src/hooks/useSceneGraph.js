@@ -245,6 +245,59 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
     };
   }, [updatedSceneGraph]);
 
+  // Create a list of all motions with metadata for step display
+  const motionList = useMemo(() => {
+    if (!computedMotionSequence) {
+      return [];
+    }
+
+    return computedMotionSequence.motions.map((motion, index) => ({
+      index: index + 1, // 1-based step number
+      stepNumber: index + 1,
+      totalSteps: computedMotionSequence.motions.length,
+      partId: motion.part_id,
+      keyframeId: motion.keyframe_id,
+      startTime: motion.startTime,
+      endTime: motion.endTime,
+      duration: motion.duration,
+      // Normalized progress values (0-1 in total timeline)
+      startProgress: motion.startTime / computedMotionSequence.totalDuration,
+      endProgress: motion.endTime / computedMotionSequence.totalDuration
+    }));
+  }, [computedMotionSequence]);
+
+  // Find current step based on assembly progress
+  const currentStepInfo = useMemo(() => {
+    if (!computedMotionSequence || motionList.length === 0) {
+      return null;
+    }
+
+    const currentTime = assemblyProgress * computedMotionSequence.totalDuration;
+    
+    // Find the active motion (the one currently in progress)
+    const activeMotionIndex = computedMotionSequence.motions.findIndex(motion => 
+      currentTime > motion.startTime && currentTime <= motion.endTime
+    );
+
+    if (activeMotionIndex >= 0) {
+      return motionList[activeMotionIndex];
+    }
+
+    // If no active motion, find the last completed or first upcoming
+    if (currentTime <= 0) {
+      return null; // Before first motion
+    }
+    
+    // Find last completed motion
+    for (let i = motionList.length - 1; i >= 0; i--) {
+      if (currentTime >= computedMotionSequence.motions[i].endTime) {
+        return motionList[i];
+      }
+    }
+
+    return null;
+  }, [computedMotionSequence, motionList, assemblyProgress]);
+
   const animationInfo = useMemo(() => {
     if (!computedMotionSequence) {
       return {
@@ -282,6 +335,8 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
     sceneInfo,
     animationInfo,
     performanceStats,
+    motionList,           // List of all motions with metadata
+    currentStepInfo,      // Current step information
     
     // Debug functions
     debug: debugFunctions
@@ -295,7 +350,15 @@ export function useSceneGraph(selectedCandidate, assemblyProgress, options = {})
  * @returns {Object} Basic scene graph data
  */
 export function useSimpleSceneGraph(selectedCandidate, assemblyProgress) {
-  const { sceneGraph, activePart, motionSequence, isComputing, computationError } = useSceneGraph(
+  const { 
+    sceneGraph, 
+    activePart, 
+    motionSequence, 
+    isComputing, 
+    computationError,
+    motionList,
+    currentStepInfo
+  } = useSceneGraph(
     selectedCandidate, 
     assemblyProgress, 
     { enableDebugLogging: false, enablePerformanceMonitoring: false }
@@ -305,6 +368,8 @@ export function useSimpleSceneGraph(selectedCandidate, assemblyProgress) {
     sceneGraph,
     activePart,
     motionSequence,
+    motionList,
+    currentStepInfo,
     isLoading: isComputing,
     error: computationError
   };

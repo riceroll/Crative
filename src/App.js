@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import LogoCard from './components/GUI/LogoCard'
 import InputForm from './components/GUI/InputForm'
 import OptionsList from './components/GUI/OptionsList'
@@ -10,12 +10,20 @@ import FloatingControls from './components/GUI/FloatingControls'
 import SceneGraphTester from './components/SceneGraphTester'
 import { DevThreeDView } from './components/NewThreeDView'
 import { ProdThreeDView } from './components/NewThreeDView'
+import { CrateContext } from './store/CrateContext'
+import { useSimpleSceneGraph } from './hooks/useSceneGraph'
 import './App.css'
 
 export default function App() {
-  // Check URL parameter for hiding UI
+  // Check URL parameters
   const params = new URLSearchParams(window.location.search);
   const hideUI = params.get('hideUI') === 'true';
+  const debugMode = params.get('debug') === 'true';
+  const hideStepHUD = params.get('hideStepHUD') === 'true';
+
+  // Get motion list for progress slider checkpoints
+  const { selectedCandidate, assemblyProgress } = useContext(CrateContext);
+  const { motionList } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
 
   // For development, you can switch between different views
   const isDevelopment = process.env.NODE_ENV === 'development'
@@ -29,10 +37,10 @@ export default function App() {
   // Regular app layout with new scene graph system
   return (
     <div className='app-container' style={{ display: 'flex', height: '100vh' }}>
-      <div className='main-content' style={{ flex: 1 }}>
-        {isDevelopment ? <DevThreeDView /> : <ProdThreeDView />}
-        <ProgressSlider />
-        {hideUI && <FloatingControls />}
+      <div className='main-content' style={{ flex: 1, position: 'relative' }}>
+        {debugMode ? <DevThreeDView hideStepHUD={hideStepHUD} /> : <ProdThreeDView hideStepHUD={hideStepHUD} />}
+        <ProgressSlider motionList={motionList} />
+        <FloatingControls />
       </div>
       {!hideUI && (
         <div className='sidebar'>

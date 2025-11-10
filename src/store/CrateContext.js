@@ -20,6 +20,19 @@ export function CrateProvider({ children }) {
     };
   };
 
+  // Get background color from URL parameters
+  const getInitialBgColor = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('bgColor') || '#ffffff';
+  };
+
+  // Get camera distance factor from URL parameters
+  const getInitialCameraDistanceFactor = () => {
+    const params = new URLSearchParams(window.location.search);
+    const factor = params.get('cameraDistance');
+    return factor ? Number(factor) : 1.0;
+  };
+
   // Rename dims to innerDims to indicate these dimensions belong to the target object
   const [innerDims, setInnerDims] = useState(getInitialDimensions());
   const [displayDims, setDisplayDims] = useState(() => {
@@ -38,6 +51,8 @@ export function CrateProvider({ children }) {
   const [useInch, setUseInch] = useState(true);
   const [assemblyProgress, setAssemblyProgress] = useState(1.0);
   const [focusPosition, setFocusPosition] = useState([0, 0, 0]);
+  const [bgColor, setBgColor] = useState(getInitialBgColor());
+  const [cameraDistanceFactor, setCameraDistanceFactor] = useState(getInitialCameraDistanceFactor());
   const [boardTypesToExclude, setBoardTypesToExclude] = useState([
     'board_24x5',
     'board_24x24',
@@ -141,6 +156,10 @@ export function CrateProvider({ children }) {
         setAssemblyProgress,
         focusPosition,
         setFocusPosition,
+        bgColor, // <-- Expose background color state
+        setBgColor, // <-- Expose background color setter
+        cameraDistanceFactor, // <-- Expose camera distance factor
+        setCameraDistanceFactor, // <-- Expose camera distance factor setter
         boardTypesToExclude, // <-- Expose board exclusion state
         setBoardTypesToExclude, // <-- Expose board exclusion setter
         collapsedCards, // <-- Expose collapsed cards state

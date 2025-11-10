@@ -1,12 +1,40 @@
 /* Floating Controls - Bottom Right Corner */
 .floating-controls {
-  position: fixed;
+  position: absolute;
   bottom: 80px;
   right: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   z-index: 1000;
+}
+
+.floating-button-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.floating-button-label {
+  position: absolute;
+  right: 66px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.floating-button-wrapper:hover .floating-button-label {
+  opacity: 1;
+  visibility: visible;
+  right: 70px;
 }
 
 .floating-button {
@@ -54,7 +82,7 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
   .floating-controls {
-    bottom: 120px;
+    bottom: 70px;
     right: 15px;
   }
   

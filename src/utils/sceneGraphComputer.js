@@ -555,14 +555,14 @@ function generateFaceKeyframes(faceId, faceData, assemblyDisplacement) {
       pos: calculateRelativePosition(faceData.flipped_position, faceData.final_position),
       rot: calculateRelativeRotation(faceData.flipped_rotation, faceData.final_rotation),
       alpha: 1,
-      duration: 0.1
+      duration: 0.15
     },
     {
       keyframe_id: `${faceId}_initial`,
       pos: calculateRelativePosition(faceData.initial_position, faceData.final_position),
       rot: calculateRelativeRotation(faceData.initial_rotation, faceData.final_rotation),
       alpha: 1,
-      duration: 0.1
+      duration: 0.2
     },
     {
       keyframe_id: `${faceId}_final`,
@@ -595,7 +595,7 @@ function generateBoardKeyframes(boardId, board, explosionDirection) {
       pos: explosionPos,
       rot: [0, 0, 0],
       alpha: 0,
-      duration: 0.4
+      duration: 0.1
     },
     {
       keyframe_id: `${boardId}_final`,
@@ -620,7 +620,7 @@ function generateCubeKeyframes(cubeId, cube) {
       pos: calculateRelativePosition(cube.initial_position, cube.final_position),
       rot: calculateRelativeRotation(cube.initial_rotation, cube.final_rotation),
       alpha: 0,
-      duration: 0.2
+      duration: 0.1
     },
     {
       keyframe_id: `${cubeId}_final`,
@@ -645,7 +645,7 @@ function generateScrewKeyframes(screwId, screw) {
       pos: calculateRelativePosition(screw.initial_position, screw.final_position),
       rot: calculateRelativeRotation(screw.initial_rotation, screw.final_rotation),
       alpha: 0,
-      duration: 0.2
+      duration: 0.1
     },
     {
       keyframe_id: `${screwId}_final`,
@@ -670,7 +670,7 @@ function generatePieceKeyframes(pieceId, piece) {
       pos: calculateRelativePosition(piece.initial_position, piece.final_position),
       rot: calculateRelativeRotation(piece.initial_rotation, piece.final_rotation),
       alpha: 0,
-      duration: 0.2
+      duration: 0.1
     },
     {
       keyframe_id: `${pieceId}_final`,
@@ -695,7 +695,7 @@ function generateBarKeyframes(barId, bar) {
       pos: calculateRelativePosition(bar.initial_position, bar.final_position),
       rot: calculateRelativeRotation(bar.initial_rotation, bar.final_rotation),
       alpha: 0,
-      duration: 0.2
+      duration: 0.1
     },
     {
       keyframe_id: `${barId}_final`,
@@ -872,7 +872,7 @@ function generateStripKeyframes(stripId, stripCenterPos, perpendicularDirection,
       pos: displacementPos,
       rot: [0, 0, 0],
       alpha: 1,
-      duration: 0.3
+      duration: 0.1
     },
     {
       keyframe_id: `${stripId}_final`,

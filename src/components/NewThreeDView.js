@@ -4,6 +4,7 @@
 import React, { useContext, useRef, useEffect, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { ModelContext } from '../store/ModelContext';
 import { CrateContext } from '../store/CrateContext';
 import { CameraProvider, useCameraContext } from '../store/CameraContext';
@@ -13,18 +14,18 @@ import CameraController from './CameraController';
 import { getCameraParameters, precomputeCameraTargetsFromAnimation } from '../utils/animationEngine';
 import { cubeColor } from '../configs/globalConfigs';
 
-export default function NewThreeDView({ enableDebug = false, showPerformanceStats = false }) {
+export default function NewThreeDView({ enableDebug = false, showPerformanceStats = false, hideStepHUD = false }) {
   return (
     <CameraProvider>
-      <ThreeDViewContent enableDebug={enableDebug} showPerformanceStats={showPerformanceStats} />
+      <ThreeDViewContent enableDebug={enableDebug} showPerformanceStats={showPerformanceStats} hideStepHUD={hideStepHUD} />
     </CameraProvider>
   );
 }
 
 // Helper component to capture Three.js scene and pre-compute camera targets
-function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, setProgressCallback, autoCameraEnabled, onComputingProgress }) {
+function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, setProgressCallback, autoCameraEnabled, onComputingProgress, bgColor }) {
   const { setThreeScene } = useCameraContext();
-  const { scene } = useThree();
+  const { scene, gl } = useThree();
   const hasComputedRef = useRef(false);
   const lastAutoCameraRef = useRef(autoCameraEnabled);
   
@@ -33,6 +34,14 @@ function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, se
       setThreeScene(scene);
     }
   }, [scene, setThreeScene]);
+  
+  // Set background color
+  useEffect(() => {
+    if (scene) {
+      const color = bgColor || '#ffffff';
+      scene.background = new THREE.Color(color);
+    }
+  }, [scene, bgColor]);
   
   // Reset hasComputedRef when scene graph or motion sequence changes
   useEffect(() => {
@@ -65,7 +74,7 @@ function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, se
   return null;
 }
 
-function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
+function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
   const models = useContext(ModelContext);
   const { 
     innerDims, 
@@ -73,7 +82,9 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
     assemblyProgress,
     setAssemblyProgress,
     focusPosition,
-    autoCameraEnabled 
+    autoCameraEnabled,
+    bgColor,
+    cameraDistanceFactor 
   } = useContext(CrateContext);
   const { setMotionSequenceData, updateAssemblyProgress } = useCameraContext();
   const controlsRef = useRef();
@@ -83,7 +94,7 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
   const [computeProgress, setComputeProgress] = useState(0);
 
   // Use the scene graph hook
-  const { sceneGraph, activePart, motionSequence, isLoading, error } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
+  const { sceneGraph, activePart, motionSequence, motionList, currentStepInfo, isLoading, error } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
 
   // Handle when camera targets are computed
   const handleCameraTargetsComputed = (updatedSequence) => {
@@ -208,7 +219,7 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
         </div>
       )}
       
-      <Canvas camera={{ position: [50, 50, 50], fov: 15 }} style={{ opacity: isComputingCamera ? 0.3 : 1 }}>
+      <Canvas camera={{ position: [50 * cameraDistanceFactor, 50 * cameraDistanceFactor, 50 * cameraDistanceFactor], fov: 15 }} style={{ opacity: isComputingCamera ? 0.3 : 1 }}>
         {/* Capture Three.js scene and pre-compute camera targets */}
         <SceneCapturer 
           motionSequence={motionSequence}
@@ -217,6 +228,7 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
           setProgressCallback={setAssemblyProgress}
           autoCameraEnabled={autoCameraEnabled}
           onComputingProgress={handleComputingProgress}
+          bgColor={bgColor}
         />
         
         {/* Lighting setup */}
@@ -227,7 +239,7 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
         <directionalLight position={[0, -500, 0]} intensity={1} />
         
         {/* Camera controller - manages automatic camera movement */}
-        <CameraController enabled={autoCameraEnabled} />
+        <CameraController enabled={autoCameraEnabled} distanceFactor={cameraDistanceFactor} />
         
         {/* Camera controls - manual controls, works best when auto-camera is disabled */}
         <OrbitControls
@@ -267,8 +279,8 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats }) {
         )}
       </Canvas>
 
-      {/* Debug overlay */}
-      {enableDebug && <DebugOverlay sceneGraph={sceneGraph} assemblyProgress={assemblyProgress} activePart={activePart} />}
+      {/* Debug overlay - always show the assembly step info unless hideStepHUD is true */}
+      {!hideStepHUD && <DebugOverlay sceneGraph={sceneGraph} assemblyProgress={assemblyProgress} activePart={activePart} currentStepInfo={currentStepInfo} />}
     </div>
   );
 }
@@ -350,7 +362,7 @@ function getAssemblyInstruction(partId) {
 /**
  * Debug overlay component
  */
-function DebugOverlay({ sceneGraph, assemblyProgress, activePart }) {
+function DebugOverlay({ sceneGraph, assemblyProgress, activePart, currentStepInfo }) {
   const sceneInfo = React.useMemo(() => {
     if (!sceneGraph || Object.keys(sceneGraph).length === 0) {
       return { totalParts: 0, visibleParts: 0, activeParts: 0 };
@@ -414,6 +426,11 @@ function DebugOverlay({ sceneGraph, assemblyProgress, activePart }) {
               {getAssemblyInstruction(activePart.partId).replace('Assembling: ', '')}
             </span>
           )}
+          {currentStepInfo && (
+            <span style={{ color: '#ccc', fontSize: '12px', marginLeft: '8px' }}>
+              ({currentStepInfo.stepNumber}/{currentStepInfo.totalSteps})
+            </span>
+          )}
         </div>
       </div>
       
@@ -428,13 +445,13 @@ function DebugOverlay({ sceneGraph, assemblyProgress, activePart }) {
 /**
  * Development version with full debugging enabled
  */
-export function DevThreeDView() {
-  return <NewThreeDView enableDebug={true} showPerformanceStats={true} />;
+export function DevThreeDView({ hideStepHUD = false }) {
+  return <NewThreeDView enableDebug={true} showPerformanceStats={true} hideStepHUD={hideStepHUD} />;
 }
 
 /**
  * Production version with minimal overhead
  */
-export function ProdThreeDView() {
-  return <NewThreeDView enableDebug={false} showPerformanceStats={false} />;
+export function ProdThreeDView({ hideStepHUD = false }) {
+  return <NewThreeDView enableDebug={false} showPerformanceStats={false} hideStepHUD={hideStepHUD} />;
 }

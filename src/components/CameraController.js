@@ -12,8 +12,9 @@ import * as THREE from 'three';
  * which is automatically updated by CameraContext using pre-computed targets.
  * 
  * @param {boolean} enabled - Whether auto-camera control is enabled
+ * @param {number} distanceFactor - Multiplier for camera distance (default: 1.0)
  */
-export default function CameraController({ enabled = true }) {
+export default function CameraController({ enabled = true, distanceFactor = 1.0 }) {
   const { cameraState, autoCameraEnabled } = useCameraContext();
   const { camera } = useThree();
   
@@ -27,15 +28,16 @@ export default function CameraController({ enabled = true }) {
     if (!enabled || !autoCameraEnabled) return;
     
     const { target, distance, angle } = cameraState;
+    const adjustedDistance = distance * distanceFactor;
     const initialPosition = new THREE.Vector3(
-      target[0] + Math.cos(angle[1]) * Math.cos(angle[0]) * distance,
-      target[1] + Math.sin(angle[0]) * distance,
-      target[2] + Math.sin(angle[1]) * Math.cos(angle[0]) * distance
+      target[0] + Math.cos(angle[1]) * Math.cos(angle[0]) * adjustedDistance,
+      target[1] + Math.sin(angle[0]) * adjustedDistance,
+      target[2] + Math.sin(angle[1]) * Math.cos(angle[0]) * adjustedDistance
     );
     currentPosRef.current.copy(initialPosition);
     camera.position.copy(initialPosition);
     camera.lookAt(...target);
-  }, [enabled, autoCameraEnabled]); // Re-initialize when enabled state changes
+  }, [enabled, autoCameraEnabled, distanceFactor]); // Re-initialize when enabled state changes
   
   // Update target reference when camera state changes
   useEffect(() => {
@@ -50,13 +52,14 @@ export default function CameraController({ enabled = true }) {
     if (!enabled || !autoCameraEnabled) return; // Don't control camera if disabled
     
     const { target, distance, angle, transitionSpeed } = cameraState;
+    const adjustedDistance = distance * distanceFactor;
     
     // Calculate desired camera position based on target, distance, and angle
     // Using spherical coordinates: distance * [cos(yaw)*cos(pitch), sin(pitch), sin(yaw)*cos(pitch)]
     const desiredPosition = new THREE.Vector3(
-      target[0] + Math.cos(angle[1]) * Math.cos(angle[0]) * distance,
-      target[1] + Math.sin(angle[0]) * distance,
-      target[2] + Math.sin(angle[1]) * Math.cos(angle[0]) * distance
+      target[0] + Math.cos(angle[1]) * Math.cos(angle[0]) * adjustedDistance,
+      target[1] + Math.sin(angle[0]) * adjustedDistance,
+      target[2] + Math.sin(angle[1]) * Math.cos(angle[0]) * adjustedDistance
     );
     
     // Smoothly interpolate current position to desired position
