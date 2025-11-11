@@ -58,11 +58,11 @@
   display: block;
 }
 :root {
-    --primary-color: #4a6fa5;
-    --primary-light: #6789bd;
-    --primary-dim: #98c2e7;
-    --primary-very-light: #c4e1f6;
-    --primary-dark: #345684;
+    --primary-color: #FFB004;
+    --primary-light: #FFC233;
+    --primary-dim: #FFD466;
+    --primary-very-light: #FFE699;
+    --primary-dark: #E69E03;
 
     --highlight-primary: #FFB004;
     --highlight-secondary: #E69E03;
@@ -224,8 +224,6 @@
     background-color: #ccc;
     transition: .3s;
     border-radius: 20px;
-    display: flex;
-    align-items: center;
   }
   
   .slider:before {
@@ -234,6 +232,7 @@
     height: 16px;
     width: 16px;
     left: 2px;
+    top: 2px;
     background-color: white;
     transition: .3s;
     border-radius: 50%;
@@ -1163,7 +1162,7 @@
     height: 18px;
     width: 18px;
     left: 3px;
-    bottom: 3px;
+    top: 3px;
     background-color: white;
     transition: 0.3s;
     border-radius: 50%;

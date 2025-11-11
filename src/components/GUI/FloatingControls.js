@@ -4,8 +4,13 @@ import { IoColorPalette } from 'react-icons/io5';
 import { MdVideocam } from 'react-icons/md';
 import '../../styles/floatingControls.css';
 
-export default function FloatingControls() {
+export default function FloatingControls({ show = false }) {
   const { visualizeBoardTypes, toggleVisualizeBoardTypes, autoCameraEnabled, toggleAutoCameraEnabled } = useContext(CrateContext);
+
+  // Don't render if show is false
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="floating-controls">

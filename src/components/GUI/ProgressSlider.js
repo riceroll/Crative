@@ -7,10 +7,10 @@ import '../../styles/ui.css';
 // Higher values = slower animation, Lower values = faster animation
 const BASE_SPEED_MULTIPLIER = 2.0;
 
-export default function ProgressSlider({ motionList = [] }) {
+export default function ProgressSlider({ motionList = [], hideAssemble = false }) {
   const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
   const [sliderPosition, setSliderPosition] = useState('bottom');
-  const [mobileOrientation, setMobileOrientation] = useState('vertical'); // 'vertical' or 'horizontal'
+  const [mobileOrientation, setMobileOrientation] = useState('horizontal'); // 'vertical' or 'horizontal'
   const [hoveredCheckpoint, setHoveredCheckpoint] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
@@ -211,50 +211,57 @@ export default function ProgressSlider({ motionList = [] }) {
             {mobileOrientation === 'vertical' ? <MdUnfoldLess /> : <MdUnfoldMore />}
           </button>
 
+          {/* Disassemble label - positioned before controls and slider */}
+          {hideAssemble && (
+            <div className="slider-value hide-on-mobile" style={{ flexShrink: 0 }}>Disassemble</div>
+          )}
+
           {/* Playback Controls (only show here if NOT mobile vertical) */}
-          <div className="playback-controls">
-            <button
-              onClick={handlePrev}
-              className="playback-button"
-              title="Previous checkpoint"
-            >
-              <MdSkipPrevious />
-            </button>
-            
-            {!isPlaying ? (
+          {!hideAssemble && (
+            <div className="playback-controls">
               <button
-                onClick={handlePlay}
+                onClick={handlePrev}
                 className="playback-button"
-                title="Play"
+                title="Previous checkpoint"
               >
-                <MdPlayArrow />
+                <MdSkipPrevious />
               </button>
-            ) : (
+              
+              {!isPlaying ? (
+                <button
+                  onClick={handlePlay}
+                  className="playback-button"
+                  title="Play"
+                >
+                  <MdPlayArrow />
+                </button>
+              ) : (
+                <button
+                  onClick={handlePause}
+                  className="playback-button"
+                  title="Pause"
+                >
+                  <MdPause />
+                </button>
+              )}
+              
               <button
-                onClick={handlePause}
-                className="playback-button"
-                title="Pause"
+                onClick={handleCycleSpeed}
+                className="playback-button speed-button"
+                title="Cycle playback speed"
               >
-                <MdPause />
+                ×{playSpeed}
               </button>
-            )}
-            
-            <button
-              onClick={handleCycleSpeed}
-              className="playback-button speed-button"
-              title="Cycle playback speed"
-            >
-              ×{playSpeed}
-            </button>
-            
-            <button
-              onClick={handleNext}
-              className="playback-button"
-              title="Next checkpoint"
-            >
-              <MdSkipNext />
-            </button>
-          </div>
+              
+              <button
+                onClick={handleNext}
+                className="playback-button"
+                title="Next checkpoint"
+              >
+                <MdSkipNext />
+              </button>
+            </div>
+          )}
 
           {/* Wrapper for slider and checkpoints */}
           <div ref={sliderRef} style={{ position: 'relative', flex: 1, marginRight: '0px', display: 'flex', alignItems: 'center' }}>
@@ -272,7 +279,7 @@ export default function ProgressSlider({ motionList = [] }) {
           />
           
           {/* Checkpoints */}
-          {motionList.map((checkpoint, idx) => {
+          {!hideAssemble && motionList.map((checkpoint, idx) => {
             // Account for thumb radius (16px / 2 = 8px)
             const thumbRadius = 8;
             const isVertical = sliderPosition === 'right' || (mobileOrientation === 'vertical' && window.innerWidth <= 768);
@@ -367,54 +374,60 @@ export default function ProgressSlider({ motionList = [] }) {
           </div>
         )}
 
-        <div className="slider-value hide-on-mobile">{Math.round(assemblyProgress * 100)}%</div>
+        {hideAssemble ? (
+          <div className="slider-value hide-on-mobile">Assemble</div>
+        ) : (
+          <div className="slider-value hide-on-mobile">{Math.round(assemblyProgress * 100)}%</div>
+        )}
       </div>
     </div>
     
     {/* Separate playback controls below vertical slider (mobile only) */}
-    <div className="mobile-vertical-controls">
-      <button
-        onClick={handlePrev}
-        className="playback-button"
-        title="Previous checkpoint"
-      >
-        <MdSkipPrevious />
-      </button>
-      
-      {!isPlaying ? (
+    {!hideAssemble && (
+      <div className="mobile-vertical-controls">
         <button
-          onClick={handlePlay}
+          onClick={handlePrev}
           className="playback-button"
-          title="Play"
+          title="Previous checkpoint"
         >
-          <MdPlayArrow />
+          <MdSkipPrevious />
         </button>
-      ) : (
+        
+        {!isPlaying ? (
+          <button
+            onClick={handlePlay}
+            className="playback-button"
+            title="Play"
+          >
+            <MdPlayArrow />
+          </button>
+        ) : (
+          <button
+            onClick={handlePause}
+            className="playback-button"
+            title="Pause"
+          >
+            <MdPause />
+          </button>
+        )}
+        
         <button
-          onClick={handlePause}
-          className="playback-button"
-          title="Pause"
+          onClick={handleCycleSpeed}
+          className="playback-button speed-button"
+          title="Cycle playback speed"
         >
-          <MdPause />
+          ×{playSpeed}
         </button>
-      )}
-      
-      <button
-        onClick={handleCycleSpeed}
-        className="playback-button speed-button"
-        title="Cycle playback speed"
-      >
-        ×{playSpeed}
-      </button>
-      
-      <button
-        onClick={handleNext}
-        className="playback-button"
-        title="Next checkpoint"
-      >
-        <MdSkipNext />
-      </button>
-    </div>
+        
+        <button
+          onClick={handleNext}
+          className="playback-button"
+          title="Next checkpoint"
+        >
+          <MdSkipNext />
+        </button>
+      </div>
+    )}
     </>
   );
 }

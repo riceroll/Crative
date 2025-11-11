@@ -20,6 +20,7 @@ export default function App() {
   const hideUI = params.get('hideUI') === 'true';
   const debugMode = params.get('debug') === 'true';
   const hideStepHUD = params.get('hideStepHUD') === 'true';
+  const hideAssemble = params.get('hideAssemble') === 'true';
 
   // Get motion list for progress slider checkpoints
   const { selectedCandidate, assemblyProgress } = useContext(CrateContext);
@@ -38,9 +39,9 @@ export default function App() {
   return (
     <div className='app-container' style={{ display: 'flex', height: '100vh' }}>
       <div className='main-content' style={{ flex: 1, position: 'relative' }}>
-        {debugMode ? <DevThreeDView hideStepHUD={hideStepHUD} /> : <ProdThreeDView hideStepHUD={hideStepHUD} />}
-        <ProgressSlider motionList={motionList} />
-        <FloatingControls />
+        {debugMode ? <DevThreeDView hideStepHUD={hideStepHUD || hideAssemble} /> : <ProdThreeDView hideStepHUD={hideStepHUD || hideAssemble} />}
+        <ProgressSlider motionList={motionList} hideAssemble={hideAssemble} />
+        <FloatingControls show={hideUI} />
       </div>
       {!hideUI && (
         <div className='sidebar'>

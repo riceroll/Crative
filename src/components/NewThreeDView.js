@@ -231,12 +231,37 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
           bgColor={bgColor}
         />
         
-        {/* Lighting setup */}
-        <directionalLight position={[500, 500, 500]} intensity={1} />
-        <directionalLight position={[-500, 500, -500]} intensity={1} />
-        <directionalLight position={[500, 500, -500]} intensity={1} />
-        <directionalLight position={[-500, 500, 500]} intensity={1} />
-        <directionalLight position={[0, -500, 0]} intensity={1} />
+        {/* Improved lighting setup for better material appearance */}
+        {/* Ambient light for overall base illumination */}
+        <ambientLight intensity={0.4} />
+        
+        {/* Hemisphere light for natural sky/ground lighting */}
+        <hemisphereLight 
+          skyColor="#ffffff"
+          groundColor="#444444"
+          intensity={0.6}
+        />
+        
+        {/* Main directional light (key light) - from top-front-right */}
+        <directionalLight 
+          position={[100, 100, 100]} 
+          intensity={0.8}
+          castShadow={false}
+        />
+        
+        {/* Fill light - from opposite side, lower intensity */}
+        <directionalLight 
+          position={[-50, 50, -50]} 
+          intensity={0.3}
+          castShadow={false}
+        />
+        
+        {/* Rim light - from behind for edge definition */}
+        <directionalLight 
+          position={[0, 50, -100]} 
+          intensity={0.2}
+          castShadow={false}
+        />
         
         {/* Camera controller - manages automatic camera movement */}
         <CameraController enabled={autoCameraEnabled} distanceFactor={cameraDistanceFactor} />

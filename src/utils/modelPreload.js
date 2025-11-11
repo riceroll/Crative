@@ -24,20 +24,25 @@ export async function preloadModels() {
                   // Ensure correct lighting normals
                   child.geometry.computeVertexNormals()
 
-                  // set default material if none is set
-                  if (!child.material) {
-                    console.warn(`No material found for ${name}, using default.`)
-                  }
-                  else {
-                    child.material.color = boardTypes[name]?.defaultColor || new THREE.Color(0xFFFFFF);
-
-                  }
+                  // Create or update material with better PBR properties
+                  const baseColor = boardTypes[name]?.defaultColor || new THREE.Color(0xFFFFFF);
                   
-                  // Optional: enable flat shading for crisp edges
-                  child.material.flatShading = true
-                  // Render both sides to avoid missing faces
-                  child.material.side = THREE.DoubleSide
-                  child.material.needsUpdate = true
+                  // Create a new MeshStandardMaterial with improved properties
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: baseColor,
+                    // Roughness: higher = more diffuse, less glossy (0-1)
+                    roughness: 0.8,
+                    // Metalness: 0 = dielectric, 1 = metallic
+                    metalness: 0.1,
+                    // Disable flat shading for smoother appearance
+                    flatShading: false,
+                    // Render both sides to avoid missing faces
+                    side: THREE.DoubleSide,
+                    // Enable environment mapping for better realism
+                    envMapIntensity: 0.5
+                  });
+                  
+                  child.material.needsUpdate = true;
                 }
               })
               resolve(object)

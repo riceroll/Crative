@@ -86,8 +86,12 @@ export function CrateProvider({ children }) {
     // Update the candidate crates state
     setCandidateCrates(candidates);
 
-    // Select the first candidate by default if available
-    setSelectedCandidateId( (selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId) ? candidates[0]?.id : selectedCandidateId );
+    // Select the candidate with minimum volume (rankVolume === 1) as default
+    // If no selection exists or current selection is not in new candidates
+    if ((selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId)) {
+      const minVolumeCandidate = candidates.find(c => c.rankVolume === 1);
+      setSelectedCandidateId(minVolumeCandidate?.id || candidates[0]?.id);
+    }
 
     // Turn off auto camera when dimensions change
     setAutoCameraEnabled(false);

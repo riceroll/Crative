@@ -42,14 +42,16 @@ export default function ComponentList() {
     const color = cubeColor;
     components.push({ type: 'cube', name: 'Cube Connector', imageName: 'cube', count: selectedCandidate.cubeCount, unitPrice, totalCost: unitPrice * selectedCandidate.cubeCount, color });
   }
-  if (selectedCandidate?.screwCount > 0) {
-    const unitPrice = screwPrice;
-    components.push({ type: 'screw', name: 'M8 Bolt', imageName: 'screw', count: selectedCandidate.screwCount, unitPrice, totalCost: unitPrice * selectedCandidate.screwCount, color: screwColor });
-  }
-  if (selectedCandidate?.barCount > 0) {
-    const unitPrice = stickPrice;
-    components.push({ type: 'bar', name: 'Bar', imageName: 'bar', count: selectedCandidate.barCount, unitPrice, totalCost: unitPrice * selectedCandidate.barCount, color: stickColor });
-  }
+  // Exclude bolts from parts list
+  // if (selectedCandidate?.screwCount > 0) {
+  //   const unitPrice = screwPrice;
+  //   components.push({ type: 'screw', name: 'M8 Bolt', imageName: 'screw', count: selectedCandidate.screwCount, unitPrice, totalCost: unitPrice * selectedCandidate.screwCount, color: screwColor });
+  // }
+  // Exclude bars from parts list
+  // if (selectedCandidate?.barCount > 0) {
+  //   const unitPrice = stickPrice;
+  //   components.push({ type: 'bar', name: 'Bar', imageName: 'bar', count: selectedCandidate.barCount, unitPrice, totalCost: unitPrice * selectedCandidate.barCount, color: stickColor });
+  // }
   if (selectedCandidate?.pieceCount > 0) {
     const unitPrice = piecePrice;
     components.push({ type: 'piece', name: '4-panel Space Connector', imageName: 'piece', count: selectedCandidate.pieceCount, unitPrice, totalCost: unitPrice * selectedCandidate.pieceCount, color: pieceColor });
