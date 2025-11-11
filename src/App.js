@@ -12,15 +12,13 @@ import { DevThreeDView } from './components/NewThreeDView'
 import { ProdThreeDView } from './components/NewThreeDView'
 import { CrateContext } from './store/CrateContext'
 import { useSimpleSceneGraph } from './hooks/useSceneGraph'
+import { getUrlConfig } from './utils/urlConfig'
 import './App.css'
 
 export default function App() {
-  // Check URL parameters
-  const params = new URLSearchParams(window.location.search);
-  const hideUI = params.get('hideUI') === 'true';
-  const debugMode = params.get('debug') === 'true';
-  const hideStepHUD = params.get('hideStepHUD') === 'true';
-  const hideAssemble = params.get('hideAssemble') === 'true';
+  // Get URL parameters from centralized config
+  const urlConfig = getUrlConfig();
+  const { hideUI, debugMode, hideStepHUD, hideAssemble } = urlConfig;
 
   // Get motion list for progress slider checkpoints
   const { selectedCandidate, assemblyProgress } = useContext(CrateContext);

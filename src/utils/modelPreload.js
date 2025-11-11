@@ -24,25 +24,19 @@ export async function preloadModels() {
                   // Ensure correct lighting normals
                   child.geometry.computeVertexNormals()
 
-                  // Create or update material with better PBR properties
-                  const baseColor = boardTypes[name]?.defaultColor || new THREE.Color(0xFFFFFF);
-                  
-                  // Create a new MeshStandardMaterial with improved properties
+                  // Create a new MeshStandardMaterial with proper settings
+                  const color = boardTypes[name]?.defaultColor || new THREE.Color(0xFFFFFF);
                   child.material = new THREE.MeshStandardMaterial({
-                    color: baseColor,
-                    // Roughness: higher = more diffuse, less glossy (0-1)
-                    roughness: 0.8,
-                    // Metalness: 0 = dielectric, 1 = metallic
-                    metalness: 0.1,
-                    // Disable flat shading for smoother appearance
-                    flatShading: false,
-                    // Render both sides to avoid missing faces
+                    color: color,
+                    flatShading: true,
                     side: THREE.DoubleSide,
-                    // Enable environment mapping for better realism
-                    envMapIntensity: 0.5
+                    roughness: 0.8,
+                    metalness: 0.3,
                   });
                   
-                  child.material.needsUpdate = true;
+                  // Enable shadows
+                  child.castShadow = true
+                  child.receiveShadow = true
                 }
               })
               resolve(object)

@@ -3,7 +3,8 @@
 
 import React, { useContext, useRef, useEffect, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, RandomizedLight, AccumulativeShadows, useEnvironment, Environment } from '@react-three/drei';
+import { EffectComposer, N8AO, ToneMapping, BrightnessContrast, HueSaturation } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { ModelContext } from '../store/ModelContext';
 import { CrateContext } from '../store/CrateContext';
@@ -13,6 +14,7 @@ import SceneRenderer, { SceneGraphDebugger, ScenePerformanceMonitor } from './Sc
 import CameraController from './CameraController';
 import { getCameraParameters, precomputeCameraTargetsFromAnimation } from '../utils/animationEngine';
 import { cubeColor } from '../configs/globalConfigs';
+import { getUrlConfig } from '../utils/urlConfig';
 
 export default function NewThreeDView({ enableDebug = false, showPerformanceStats = false, hideStepHUD = false }) {
   return (
@@ -74,6 +76,12 @@ function SceneCapturer({ motionSequence, sceneGraph, onCameraTargetsComputed, se
   return null;
 }
 
+// Helper component to load and apply environment
+function EnvironmentSetup() {
+  const env = useEnvironment({ files: 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/peppermint_powerplant_2_1k.hdr' });
+  return <Environment map={env} background blur={1} />;
+}
+
 function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
   const models = useContext(ModelContext);
   const { 
@@ -92,6 +100,10 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
   const originalProgressRef = useRef(assemblyProgress);
   const [isComputingCamera, setIsComputingCamera] = useState(false);
   const [computeProgress, setComputeProgress] = useState(0);
+
+  // Get URL configuration for post-processing effects
+  const urlConfig = getUrlConfig();
+  const { useN8AO, useToneMapping } = urlConfig;
 
   // Use the scene graph hook
   const { sceneGraph, activePart, motionSequence, motionList, currentStepInfo, isLoading, error } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
@@ -231,37 +243,18 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
           bgColor={bgColor}
         />
         
-        {/* Improved lighting setup for better material appearance */}
-        {/* Ambient light for overall base illumination */}
+        <React.Suspense fallback={null}>
+          {/* <EnvironmentSetup /> */}
+        </React.Suspense>
+        
+        {/* Basic lighting setup */}
         <ambientLight intensity={0.4} />
+        <directionalLight position={[-2, 2, 2]} intensity={2} castShadow />
+        <directionalLight position={[-1, 1, -1]} intensity={1} castShadow/>
+        <directionalLight position={[1, -1, 1]} intensity={0.5} castShadow />
+        {/* <directionalLight position={[-1, -1, -1]} intensity={0.5} castShadow /> */}
+
         
-        {/* Hemisphere light for natural sky/ground lighting */}
-        <hemisphereLight 
-          skyColor="#ffffff"
-          groundColor="#444444"
-          intensity={0.6}
-        />
-        
-        {/* Main directional light (key light) - from top-front-right */}
-        <directionalLight 
-          position={[100, 100, 100]} 
-          intensity={0.8}
-          castShadow={false}
-        />
-        
-        {/* Fill light - from opposite side, lower intensity */}
-        <directionalLight 
-          position={[-50, 50, -50]} 
-          intensity={0.3}
-          castShadow={false}
-        />
-        
-        {/* Rim light - from behind for edge definition */}
-        <directionalLight 
-          position={[0, 50, -100]} 
-          intensity={0.2}
-          castShadow={false}
-        />
         
         {/* Camera controller - manages automatic camera movement */}
         <CameraController enabled={autoCameraEnabled} distanceFactor={cameraDistanceFactor} />
@@ -302,6 +295,17 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
             onUpdate={handlePerformanceUpdate}
           />
         )}
+        
+        {/* Post-processing effects */}
+        <EffectComposer>
+          {useN8AO && (
+            <>
+              <N8AO aoRadius={0.15} intensity={4} distanceFalloff={2} />
+              <BrightnessContrast brightness={0.1} contrast={0.25} />
+            </>
+          )}
+          {useToneMapping && <ToneMapping />}
+        </EffectComposer>
       </Canvas>
 
       {/* Debug overlay - always show the assembly step info unless hideStepHUD is true */}

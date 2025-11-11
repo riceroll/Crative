@@ -167,6 +167,11 @@ function ModelRenderer({ part, models, position, rotation, alpha, visualizeBoard
     child.material = child.material.clone();
     child.material.transparent = true;
     child.material.opacity = alpha;
+    
+    // Maintain enhanced material properties
+    child.material.roughness = child.material.roughness || 0.8;
+    child.material.metalness = child.material.metalness || 0.1;
+    child.material.envMapIntensity = child.material.envMapIntensity || 1.0;
 
     // Apply board type coloring if this is a board
     if (modelKey.startsWith('b') && props.model_id) {
