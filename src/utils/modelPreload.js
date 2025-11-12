@@ -50,9 +50,16 @@ export async function preloadModels() {
 
   // List your actual model names (without extension)
   const entries = [
-    'b40x40', 'b40x24', 'b40x5',
-    'b24x5', 'b5x5',
-    'bar', 'cube', 'nut', 'screw', 'piece'
+    'b40x40', 
+    // 'b40x24', 
+    'b40x5',
+    // 'b24x5', 
+    // 'b5x5',
+    // 'bar', 
+    'cube', 
+    // 'nut', 
+    // 'screw', 
+    'piece'
   ]
   const results = await Promise.all(entries.map(loadObjModel))
 

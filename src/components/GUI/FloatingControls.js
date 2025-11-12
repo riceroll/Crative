@@ -4,7 +4,7 @@ import { IoColorPalette } from 'react-icons/io5';
 import { MdVideocam } from 'react-icons/md';
 import '../../styles/floatingControls.css';
 
-export default function FloatingControls({ show = false }) {
+export default function FloatingControls({ show = false, hideAutoCamera = false }) {
   const { visualizeBoardTypes, toggleVisualizeBoardTypes, autoCameraEnabled, toggleAutoCameraEnabled } = useContext(CrateContext);
 
   // Don't render if show is false
@@ -26,17 +26,19 @@ export default function FloatingControls({ show = false }) {
         <span className="floating-button-label">Board Types</span>
       </div>
 
-      {/* Auto Camera Toggle */}
-      <div className="floating-button-wrapper">
-        <button
-          className={`floating-button ${autoCameraEnabled ? 'active' : ''}`}
-          onClick={toggleAutoCameraEnabled}
-          title="Toggle Auto Camera"
-        >
-          <MdVideocam size={24} />
-        </button>
-        <span className="floating-button-label">Auto Camera</span>
-      </div>
+      {/* Auto Camera Toggle - hidden when hideAutoCamera is true */}
+      {!hideAutoCamera && (
+        <div className="floating-button-wrapper">
+          <button
+            className={`floating-button ${autoCameraEnabled ? 'active' : ''}`}
+            onClick={toggleAutoCameraEnabled}
+            title="Toggle Auto Camera"
+          >
+            <MdVideocam size={24} />
+          </button>
+          <span className="floating-button-label">Auto Camera</span>
+        </div>
+      )}
     </div>
   );
 }

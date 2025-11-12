@@ -383,7 +383,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
     </div>
     
     {/* Separate playback controls below vertical slider (mobile only) */}
-    {!hideAssemble && (
+    {!hideAssemble && mobileOrientation === 'vertical' && window.innerWidth <= 768 && (
       <div className="mobile-vertical-controls">
         <button
           onClick={handlePrev}

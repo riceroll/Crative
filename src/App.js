@@ -39,7 +39,7 @@ export default function App() {
       <div className='main-content' style={{ flex: 1, position: 'relative' }}>
         {debugMode ? <DevThreeDView hideStepHUD={hideStepHUD || hideAssemble} /> : <ProdThreeDView hideStepHUD={hideStepHUD || hideAssemble} />}
         <ProgressSlider motionList={motionList} hideAssemble={hideAssemble} />
-        <FloatingControls show={hideUI} />
+        <FloatingControls show={hideUI} hideAutoCamera={hideUI} />
       </div>
       {!hideUI && (
         <div className='sidebar'>

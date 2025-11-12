@@ -1,4 +1,19 @@
+<script>
+  // Get URL parameters from parent page and pass them to iframe
+  (function() {
+    const iframe = document.getElementById('crative-iframe');
+    const params = new URLSearchParams(window.location.search);
+    const baseUrl = 'https://riceroll.github.io/crative-dev/';
+    console.log(params.toString());
+    
+    // Build the URL with parameters
+    const iframeSrc = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    iframe.src = iframeSrc;
+  })();
+</script>
+
 <iframe 
+  id="crative-iframe"
   src="https://riceroll.github.io/crative-dev/" 
   width="100%" 
   height="100vh"

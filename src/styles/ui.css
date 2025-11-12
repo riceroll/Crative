@@ -941,6 +941,11 @@
     max-width: 100vw;
     box-sizing: border-box;
   }
+  
+  /* Show orientation toggle button only on mobile */
+  .orientation-toggle-button {
+    display: flex !important;
+  }
 
   /* Sidebar moves to bottom */
   .sidebar {
@@ -1257,7 +1262,6 @@
   } */
   
   .fullscreen-slider.mobile-vertical .orientation-toggle-button {
-    display: flex !important;
     order: -1;
     margin-bottom: 4px;
     transform: rotate(90deg);
