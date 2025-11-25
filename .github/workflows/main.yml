@@ -39,7 +39,7 @@ jobs:
       - name: Install Dependencies and Build
         run: |
           npm ci
-          npm run build
+          CI=false npm run build
 
       # Step 4: Configures GitHub Pages
       - name: Setup Pages

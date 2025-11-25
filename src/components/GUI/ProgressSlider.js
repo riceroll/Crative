@@ -5,7 +5,7 @@ import '../../styles/ui.css';
 
 // Base speed multiplier - adjust this to make animations faster/slower globally
 // Higher values = slower animation, Lower values = faster animation
-const BASE_SPEED_MULTIPLIER = 2.0;
+const BASE_SPEED_MULTIPLIER = 5.0;
 
 export default function ProgressSlider({ motionList = [], hideAssemble = false }) {
   const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
@@ -15,40 +15,50 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
+  const [targetProgress, setTargetProgress] = useState(null);
   const sliderRef = useRef(null);
   const animationRef = useRef(null);
 
   const handleChange = (e) => {
     setAssemblyProgress(parseFloat(e.target.value));
+    setTargetProgress(null);
+    setIsPlaying(false);
   };
 
   const handlePlay = () => {
+    // If we are at the end (or very close to it), restart from beginning
+    if (assemblyProgress >= 0.999) {
+      setAssemblyProgress(0);
+    }
+    
     setIsPlaying(true);
+    setTargetProgress(null);
     if (playSpeed === 1) {
       setPlaySpeed(1);
     }
   };
 
   const handleCycleSpeed = () => {
-    // Cycle through speeds: 1 → 2 → 4 → 8 → 16 → 1
+    // Cycle through speeds: 1 → 2 → 4 → 8 → 1
     setPlaySpeed(prevSpeed => {
       if (prevSpeed === 1) return 2;
       if (prevSpeed === 2) return 4;
       if (prevSpeed === 4) return 8;
-      if (prevSpeed === 8) return 16;
       return 1;
     });
   };
 
   const handlePause = () => {
     setIsPlaying(false);
+    setTargetProgress(null);
   };
 
   const handleNext = () => {
     if (motionList.length === 0) return;
     const nextCheckpoint = motionList.find(cp => cp.startProgress > assemblyProgress);
     if (nextCheckpoint) {
-      setAssemblyProgress(Math.min(nextCheckpoint.startProgress + 0.0001, 1.0));
+      setTargetProgress(nextCheckpoint.startProgress);
+      setIsPlaying(false); // Ensure normal playback is off
     }
   };
 
@@ -61,15 +71,17 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
     
     if (prevCheckpoints.length > 0) {
       const prevCheckpoint = prevCheckpoints[prevCheckpoints.length - 1];
-      setAssemblyProgress(Math.min(prevCheckpoint.startProgress + 0.0001, 1.0));
+      setTargetProgress(prevCheckpoint.startProgress);
+      setIsPlaying(false); // Ensure normal playback is off
     } else {
       // No previous checkpoint, go to start
-      setAssemblyProgress(0);
+      setTargetProgress(0);
+      setIsPlaying(false); // Ensure normal playback is off
     }
   };
 
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying || targetProgress !== null) {
       // Calculate total duration from motionList
       const totalDuration = motionList.length > 0 
         ? Math.max(...motionList.map(m => m.endTime))
@@ -81,16 +93,50 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
       const startTime = performance.now();
       const startProgress = assemblyProgress;
       
+      // Determine effective speed and direction
+      let effectiveSpeed = playSpeed;
+      let isSeeking = false;
+      
+      if (targetProgress !== null) {
+        isSeeking = true;
+        // Direction: 1 for forward, -1 for backward
+        const direction = targetProgress > startProgress ? 1 : -1;
+        // Use 4x speed for seeking
+        effectiveSpeed = 4 * direction;
+      }
+
       const animate = (currentTime) => {
         const elapsed = (currentTime - startTime) / 1000; // Convert to seconds
-        const progressIncrement = (elapsed / adjustedDuration) * playSpeed;
+        const progressIncrement = (elapsed / adjustedDuration) * effectiveSpeed;
         const newProgress = startProgress + progressIncrement;
         
-        if (newProgress >= 1.0) {
-          setAssemblyProgress(1.0);
-          setIsPlaying(false);
+        let finished = false;
+        let finalProgress = newProgress;
+
+        if (isSeeking) {
+          // Check if we reached or passed the target
+          if ((effectiveSpeed > 0 && newProgress >= targetProgress) || 
+              (effectiveSpeed < 0 && newProgress <= targetProgress)) {
+            finalProgress = targetProgress;
+            finished = true;
+          }
         } else {
-          setAssemblyProgress(newProgress);
+          // Normal playback limits
+          if (newProgress >= 1.0) {
+            finalProgress = 1.0;
+            finished = true;
+          } else if (newProgress <= 0.0) {
+            finalProgress = 0.0;
+            finished = true;
+          }
+        }
+        
+        setAssemblyProgress(finalProgress);
+
+        if (finished) {
+          setIsPlaying(false);
+          setTargetProgress(null);
+        } else {
           animationRef.current = requestAnimationFrame(animate);
         }
       };
@@ -103,7 +149,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, playSpeed, assemblyProgress, setAssemblyProgress, motionList]);
+  }, [isPlaying, playSpeed, assemblyProgress, setAssemblyProgress, motionList, targetProgress]);
 
   // Keyboard controls
   useEffect(() => {
@@ -124,11 +170,23 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
           break;
         case 'Space':
           e.preventDefault();
-          if (isPlaying) {
+          if (isPlaying || targetProgress !== null) {
             handlePause();
           } else {
             handlePlay();
           }
+          break;
+        case 'Digit1':
+          setPlaySpeed(1);
+          break;
+        case 'Digit2':
+          setPlaySpeed(2);
+          break;
+        case 'Digit3':
+          setPlaySpeed(4);
+          break;
+        case 'Digit4':
+          setPlaySpeed(8);
           break;
         default:
           break;
@@ -137,7 +195,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, assemblyProgress, motionList]);
+  }, [isPlaying, assemblyProgress, motionList, targetProgress]);
 
   const handleCheckpointClick = (checkpoint) => {
     // Add tiny offset to ensure motion becomes active (currentTime > startTime)
@@ -218,7 +276,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
 
           {/* Playback Controls (only show here if NOT mobile vertical) */}
           {!hideAssemble && (
-            <div className="playback-controls">
+            <div className="playback-controls" id="tutorial-video-controls">
               <button
                 onClick={handlePrev}
                 className="playback-button"
@@ -264,7 +322,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
           )}
 
           {/* Wrapper for slider and checkpoints */}
-          <div ref={sliderRef} style={{ position: 'relative', flex: 1, marginRight: '0px', display: 'flex', alignItems: 'center' }}>
+          <div ref={sliderRef} id="tutorial-slider-bar" style={{ position: 'relative', flex: 1, marginRight: '0px', display: 'flex', alignItems: 'center' }}>
           <input
             id="progress-slider"
             type="range"

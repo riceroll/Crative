@@ -4,6 +4,20 @@
 import * as THREE from 'three';
 
 /**
+ * Animation Configuration
+ * Adjust these values to tweak the animation feel
+ */
+export const ANIMATION_TWEAKS = {
+  // Fraction of the total motion duration to stay still at the start (0-1)
+  START_PAUSE: 0.1,
+  // Fraction of the total motion duration to stay still at the end (0-1)
+  END_PAUSE: 0.1,
+  // Exponent for the easing curve (higher = sharper acceleration/deceleration)
+  // 3 = Cubic, 4 = Quartic, 5 = Quintic
+  EASING_POWER: 4
+};
+
+/**
  * Create ordered motion sequence from scene graph keyframes
  * @param {Object} sceneGraph - Complete scene graph with all parts
  * @returns {Array} Ordered array of motion objects with timing information
@@ -90,7 +104,13 @@ export function createMotionSequence(sceneGraph) {
   // Add motions to sequence with timing and pre-computed camera targets
   phaseMotions.forEach((motion, index) => {
     const startTime = cumulativeDuration;
-    const duration = motion.keyframe.duration;
+    let duration = motion.keyframe.duration;
+
+    // Slow down cube animations
+    if (motion.part_id.includes('cube')) {
+      duration *= 3.0; // Make it 3x slower
+    }
+
     const endTime = startTime + duration;
 
     const part = sceneGraph[motion.part_id];
@@ -214,20 +234,23 @@ function applyMotionToState(sceneGraph, motion, progress) {
   const keyframe = motion.keyframe;
   const currentState = part.properties.current_state;
 
+  // Apply easing to the progress for smoother animation
+  const easedProgress = customEase(progress);
+
   // Get the next keyframe for interpolation
   const nextKeyframe = getNextKeyframe(part, motion.keyframe_id);
   
   if (nextKeyframe) {
     // Interpolate between current and next keyframe
-    currentState.rel_pos = interpolateVector(keyframe.pos, nextKeyframe.pos, progress);
-    currentState.rel_rot = interpolateVector(keyframe.rot, nextKeyframe.rot, progress);
-    currentState.alpha = interpolateScalar(keyframe.alpha, nextKeyframe.alpha, progress);
+    currentState.rel_pos = interpolateVector(keyframe.pos, nextKeyframe.pos, easedProgress);
+    currentState.rel_rot = interpolateVector(keyframe.rot, nextKeyframe.rot, easedProgress);
+    currentState.alpha = interpolateScalar(keyframe.alpha, nextKeyframe.alpha, easedProgress);
   } else {
     // No next keyframe - interpolate from default state
     const defaultState = { pos: [0, 0, 0], rot: [0, 0, 0], alpha: part.properties.type === 'model' ? 1 : 1 };
-    currentState.rel_pos = interpolateVector(keyframe.pos, defaultState.pos, progress);
-    currentState.rel_rot = interpolateVector(keyframe.rot, defaultState.rot, progress);
-    currentState.alpha = interpolateScalar(keyframe.alpha, defaultState.alpha, progress);
+    currentState.rel_pos = interpolateVector(keyframe.pos, defaultState.pos, easedProgress);
+    currentState.rel_rot = interpolateVector(keyframe.rot, defaultState.rot, easedProgress);
+    currentState.alpha = interpolateScalar(keyframe.alpha, defaultState.alpha, easedProgress);
   }
 }
 
@@ -246,6 +269,31 @@ function getNextKeyframe(part, currentKeyframeId) {
   }
   
   return null;
+}
+
+/**
+ * Custom easing function with pauses and configurable curve
+ * @param {number} t - Linear progress (0 to 1)
+ * @returns {number} Eased progress
+ */
+function customEase(t) {
+  const { START_PAUSE, END_PAUSE, EASING_POWER } = ANIMATION_TWEAKS;
+  
+  // Handle start pause
+  if (t <= START_PAUSE) return 0;
+  
+  // Handle end pause
+  if (t >= 1 - END_PAUSE) return 1;
+  
+  // Normalize t to the active range [0, 1]
+  const activeDuration = 1 - START_PAUSE - END_PAUSE;
+  const activeT = (t - START_PAUSE) / activeDuration;
+  
+  // Apply Ease In Out with configurable power
+  // Formula: t < 0.5 ? 2^(n-1) * t^n : 1 - (-2t + 2)^n / 2
+  return activeT < 0.5 
+    ? Math.pow(2, EASING_POWER - 1) * Math.pow(activeT, EASING_POWER) 
+    : 1 - Math.pow(-2 * activeT + 2, EASING_POWER) / 2;
 }
 
 /**
@@ -419,6 +467,7 @@ export function getMotionProgress(motion, globalProgress, totalDuration) {
 /**
  * Compute camera focus target (world position) for a motion's keyframe
  * This calculates where the camera should look during this specific animation phase
+ * Returns the midpoint of the trajectory for this motion
  * @param {Object} part - Part from scene graph
  * @param {Object} keyframe - Keyframe data
  * @param {Object} sceneGraph - Full scene graph for parent traversal
@@ -429,15 +478,29 @@ function computeCameraFocusTargetForMotion(part, keyframe, sceneGraph) {
     return [0, 0, 0];
   }
 
-  // Calculate the world position of the part at this keyframe state
-  // This represents where the part will be during this motion
-  const worldPos = calculateWorldPositionForKeyframe(part, keyframe, sceneGraph);
+  // Calculate the start position (current keyframe)
+  const startWorldPos = calculateWorldPositionForKeyframe(part, keyframe, sceneGraph);
+  
+  // Calculate the end position (next keyframe)
+  const nextKeyframe = getNextKeyframe(part, keyframe.keyframe_id);
+  let endWorldPos = startWorldPos;
+  
+  if (nextKeyframe) {
+    endWorldPos = calculateWorldPositionForKeyframe(part, nextKeyframe, sceneGraph);
+  }
+  
+  // Calculate midpoint of the trajectory
+  const midWorldPos = [
+    (startWorldPos[0] + endWorldPos[0]) / 2,
+    (startWorldPos[1] + endWorldPos[1]) / 2,
+    (startWorldPos[2] + endWorldPos[2]) / 2
+  ];
   
   // Scale the position to match the scene scale (0.1)
   const scaledPos = [
-    worldPos[0] * 0.1,
-    worldPos[1] * 0.1,
-    worldPos[2] * 0.1
+    midWorldPos[0] * 0.1,
+    midWorldPos[1] * 0.1,
+    midWorldPos[2] * 0.1
   ];
   
   return scaledPos;
@@ -882,7 +945,7 @@ export function getCameraParameters(activePart, sceneGraph) {
 
 /**
  * Get camera parameters from motion sequence based on global progress
- * Returns fixed camera position for the current motion phase (no interpolation)
+ * Interpolates between previous motion's target and current motion's target
  * @param {Object} motionSequence - Motion sequence with pre-computed camera targets
  * @param {number} globalProgress - Progress from 0 to 1
  * @returns {Object} { target, distance, angle } - Camera parameters for current phase
@@ -899,21 +962,60 @@ export function getInterpolatedCameraParameters(motionSequence, globalProgress) 
 
   const currentTime = globalProgress * motionSequence.totalDuration;
   
-  // Find the current motion(s) at this time
-  const activeMotions = motionSequence.motions.filter(motion => 
+  // Find the active motion that covers the current time
+  const activeMotion = motionSequence.motions.find(motion => 
     currentTime >= motion.startTime && currentTime <= motion.endTime
   );
 
-  // If we have an active motion, use its fixed camera parameters
-  if (activeMotions.length > 0) {
-    // Use the last active motion (most relevant)
-    const currentMotion = activeMotions[activeMotions.length - 1];
+  if (activeMotion) {
+    // Determine start parameters (from previous motion or default)
+    let startParams = {
+      target: [0, 0, 0],
+      distance: 150,
+      angle: [Math.PI / 4, Math.PI / 4, 0]
+    };
+
+    // If there is a previous motion, use its end parameters
+    if (activeMotion.index > 0) {
+      const prevMotion = motionSequence.motions[activeMotion.index - 1];
+      startParams = {
+        target: prevMotion.cameraFocusTarget,
+        distance: prevMotion.cameraDistance,
+        angle: prevMotion.cameraAngle
+      };
+    } else {
+        // For the very first motion, use the current target as start to avoid jump
+        startParams = {
+            target: activeMotion.cameraFocusTarget,
+            distance: activeMotion.cameraDistance,
+            angle: activeMotion.cameraAngle
+        };
+    }
+
+    // End parameters are the current motion's target
+    const endParams = {
+      target: activeMotion.cameraFocusTarget,
+      distance: activeMotion.cameraDistance,
+      angle: activeMotion.cameraAngle
+    };
+
+    // Calculate progress within this motion
+    const timeInMotion = currentTime - activeMotion.startTime;
+    const linearProgress = timeInMotion / activeMotion.duration;
     
-    // Return the fixed camera parameters for this motion phase
+    // Make camera move faster than the object to settle earlier
+    // Finish the camera move in the first 60% of the motion duration
+    const cameraFinishFactor = 0.6; 
+    const acceleratedProgress = Math.min(1, linearProgress / cameraFinishFactor);
+    
+    // Apply the same easing as the parts
+    const easedProgress = customEase(acceleratedProgress);
+
+    // Interpolate
     return {
-      target: currentMotion.cameraFocusTarget,
-      distance: currentMotion.cameraDistance,
-      angle: currentMotion.cameraAngle
+      target: interpolateVector(startParams.target, endParams.target, easedProgress),
+      distance: interpolateScalar(startParams.distance, endParams.distance, easedProgress),
+      angle: interpolateVector(startParams.angle, endParams.angle, easedProgress)
     };
   }
 

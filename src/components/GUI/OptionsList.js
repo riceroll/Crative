@@ -11,7 +11,7 @@ export default function OptionsList() {
   const isCollapsed = collapsedCards.optionsList;
 
   return (
-    <div className='card'>
+    <div className='card' id="tutorial-candidates-panel">
       <div
         className='card-title collapsible-title'
         onClick={() => toggleCardCollapse('optionsList')}

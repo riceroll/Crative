@@ -1,0 +1,23 @@
+{
+  "ui": {
+    "hideUI": false,
+    "hideStepHUD": false,
+    "hideAssemble": false
+  },
+  "camera": {
+    "distanceFactor": 1.0
+  },
+  "rendering": {
+    "bgColor": "#ffffff",
+    "useN8AO": true,
+    "useToneMapping": false
+  },
+  "debug": {
+    "enabled": false
+  },
+  "dimensions": {
+    "width": 40,
+    "height": 40,
+    "depth": 40
+  }
+}

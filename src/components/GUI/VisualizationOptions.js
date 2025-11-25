@@ -11,7 +11,7 @@ export default function VisualizationOptions() {
   } = useContext(CrateContext);
 
   return (
-    <div className="card">
+    <div className="card" id="tutorial-toggles-panel">
       <div className="visualization-options-mobile">
         <div className="toggle-container">
           <label className="toggle-switch">

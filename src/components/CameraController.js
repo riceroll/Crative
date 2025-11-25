@@ -62,15 +62,11 @@ export default function CameraController({ enabled = true, distanceFactor = 1.0 
       target[2] + Math.sin(angle[1]) * Math.cos(angle[0]) * adjustedDistance
     );
     
-    // Smoothly interpolate current position to desired position
-    currentPosRef.current.lerp(desiredPosition, transitionSpeed);
-    
-    // Smoothly interpolate look-at target
-    targetLookAt.current.lerp(targetRef.current, transitionSpeed);
-    
-    // Update camera
-    camera.position.copy(currentPosRef.current);
-    camera.lookAt(targetLookAt.current);
+    // Directly apply position and look-at target
+    // The smoothing is now handled by the animation engine's interpolation
+    // This ensures the camera moves exactly in sync with the animation
+    camera.position.copy(desiredPosition);
+    camera.lookAt(target[0], target[1], target[2]);
     camera.updateProjectionMatrix();
   });
   

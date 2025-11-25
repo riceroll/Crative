@@ -13,6 +13,7 @@ import { ProdThreeDView } from './components/NewThreeDView'
 import { CrateContext } from './store/CrateContext'
 import { useSimpleSceneGraph } from './hooks/useSceneGraph'
 import { getUrlConfig } from './utils/urlConfig'
+import TutorialOverlay from './components/Tutorial/TutorialOverlay'
 import './App.css'
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
   // Regular app layout with new scene graph system
   return (
     <div className='app-container' style={{ display: 'flex', height: '100vh' }}>
+      {!hideUI && <TutorialOverlay />}
       <div className='main-content' style={{ flex: 1, position: 'relative' }}>
         {debugMode ? <DevThreeDView hideStepHUD={hideStepHUD || hideAssemble} /> : <ProdThreeDView hideStepHUD={hideStepHUD || hideAssemble} />}
         <ProgressSlider motionList={motionList} hideAssemble={hideAssemble} />

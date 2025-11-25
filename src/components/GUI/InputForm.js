@@ -30,6 +30,7 @@ export default function InputForm() {
     <form
       className='card'
       onSubmit={handleSubmit}
+      id="tutorial-dimensions-panel"
     >
       <div className='card-title' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>Cargo Dimensions</span>

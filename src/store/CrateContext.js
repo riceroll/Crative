@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useMemo } from 'react';
 import { calculateCandidateCrates } from '../utils/candidateCrateCalculator';
 import { convertToInches, convertToDisplay } from '../utils/utils';
+import { getUrlConfig } from '../utils/urlConfig';
 
 
 export const CrateContext = createContext(null);
@@ -8,29 +9,25 @@ export const CrateContext = createContext(null);
 export function CrateProvider({ children }) {
   // Initialize dimensions from URL parameters or use defaults
   const getInitialDimensions = () => {
-    const params = new URLSearchParams(window.location.search);
-    const width = params.get('width');
-    const height = params.get('height');
-    const depth = params.get('depth');
+    const config = getUrlConfig();
     
     return {
-      width: width ? Number(width) : 40,
-      height: height ? Number(height) : 40,
-      depth: depth ? Number(depth) : 40
+      width: config.width,
+      height: config.height,
+      depth: config.depth
     };
   };
 
   // Get background color from URL parameters
   const getInitialBgColor = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('bgColor') || '#ffffff';
+    const config = getUrlConfig();
+    return config.bgColor;
   };
 
   // Get camera distance factor from URL parameters
   const getInitialCameraDistanceFactor = () => {
-    const params = new URLSearchParams(window.location.search);
-    const factor = params.get('cameraDistance');
-    return factor ? Number(factor) : 1.0;
+    const config = getUrlConfig();
+    return config.cameraDistanceFactor;
   };
 
   // Rename dims to innerDims to indicate these dimensions belong to the target object

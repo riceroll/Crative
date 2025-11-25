@@ -103,14 +103,14 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
 
   // Get URL parameters for post-processing effects
   const getUrlParam = (param, defaultValue = true) => {
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get(param);
-    if (value === null) return defaultValue;
-    return value === 'true' || value === '1';
+    const config = getUrlConfig();
+    if (param === 'useN8AO') return config.useN8AO;
+    if (param === 'useToneMapping') return config.useToneMapping;
+    return defaultValue;
   };
 
   const useN8AO = getUrlParam('useN8AO', true);
-  const useToneMapping = getUrlParam('useToneMapping', true);
+  const useToneMapping = getUrlParam('useToneMapping', false);
 
   // Use the scene graph hook
   const { sceneGraph, activePart, motionSequence, motionList, currentStepInfo, isLoading, error } = useSimpleSceneGraph(selectedCandidate, assemblyProgress);
