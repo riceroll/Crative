@@ -167,7 +167,9 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100%',
-        color: '#666'
+        color: '#666',
+        fontSize: '14px',
+        fontFamily: "'Lato', 'Roboto', 'Arial', sans-serif"
       }}>
         Computing scene graph...
       </div>
@@ -229,10 +231,10 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
           zIndex: 1000,
           color: 'white',
           fontSize: '18px',
-          fontFamily: 'monospace'
+          fontFamily: "'Lato', 'Roboto', 'Arial', sans-serif"
         }}>
           <div>Computing Camera Positions...</div>
-          <div style={{ marginTop: '20px', fontSize: '32px', fontWeight: 'bold' }}>
+          <div style={{ marginTop: '20px', fontSize: '28px', fontWeight: 'bold' }}>
             {computeProgress}%
           </div>
         </div>
@@ -432,7 +434,7 @@ function DebugOverlay({ sceneGraph, assemblyProgress, activePart, currentStepInf
       padding: '10px',
       borderRadius: '5px',
       fontSize: '12px',
-      fontFamily: 'monospace',
+      fontFamily: "'Lato', 'Roboto', 'Arial', sans-serif",
       zIndex: 1000,
       minWidth: '250px'
     }}>

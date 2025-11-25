@@ -11,8 +11,9 @@ export default function Loader() {
       alignItems: 'center', 
       justifyContent: 'center',
       background: '#F2F3F5', 
-      color: '#000', 
-      fontSize: '1.5rem',
+      color: '#555', 
+      fontSize: '18px',
+      fontFamily: "'Lato', 'Roboto', 'Arial', sans-serif",
       zIndex: 999
     }}>
       <div className="loader-spinner"></div>
