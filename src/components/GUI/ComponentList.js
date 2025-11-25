@@ -61,7 +61,7 @@ export default function ComponentList() {
   const totalAllCost = components.reduce((sum, c) => sum + c.totalCost, 0);
 
   return (
-    <div className="card">
+    <div className="card" id="tutorial-components-panel">
       <div style={{ display:'flex', justifyContent:'space-between', alignItems: 'center' }}>
         <div 
           className="card-title collapsible-title"
@@ -74,7 +74,7 @@ export default function ComponentList() {
           </span>
         </div>
         {components.length>0 && (
-          <div onClick={triggerPrint} style={{background:'none',border:'none',cursor:'pointer',padding:'4px'}}>
+          <div id="tutorial-print-button" onClick={triggerPrint} style={{background:'none',border:'none',cursor:'pointer',padding:'4px'}}>
             <LuPrinter size="14px" color="#555"/>
           </div>
         )}

@@ -121,3 +121,35 @@
 .tutorial-btn-primary:hover {
   background: #e59e00;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 767px) {
+  .tutorial-popup {
+    width: auto;
+    max-width: calc(100vw - 40px);
+    padding: 16px;
+  }
+
+  .tutorial-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .tutorial-checkbox {
+    justify-content: center;
+  }
+
+  .tutorial-buttons {
+    justify-content: center;
+  }
+
+  .tutorial-content {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .tutorial-title {
+    font-size: 15px;
+  }
+}

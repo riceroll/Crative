@@ -7,6 +7,7 @@ import BoardTypeFilter from './components/GUI/BoardTypeFilter'
 import ComponentList from './components/GUI/ComponentList'
 import ProgressSlider from './components/GUI/ProgressSlider'
 import FloatingControls from './components/GUI/FloatingControls'
+import HelpButton from './components/GUI/HelpButton'
 import SceneGraphTester from './components/SceneGraphTester'
 import { DevThreeDView } from './components/NewThreeDView'
 import { ProdThreeDView } from './components/NewThreeDView'
@@ -38,6 +39,7 @@ export default function App() {
   return (
     <div className='app-container' style={{ display: 'flex', height: '100vh' }}>
       {!hideUI && <TutorialOverlay />}
+      <HelpButton />
       <div className='main-content' style={{ flex: 1, position: 'relative' }}>
         {debugMode ? <DevThreeDView hideStepHUD={hideStepHUD || hideAssemble} /> : <ProdThreeDView hideStepHUD={hideStepHUD || hideAssemble} />}
         <ProgressSlider motionList={motionList} hideAssemble={hideAssemble} />

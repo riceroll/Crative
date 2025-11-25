@@ -490,17 +490,22 @@ function computeCameraFocusTargetForMotion(part, keyframe, sceneGraph) {
   }
   
   // Calculate midpoint of the trajectory
+  /*
   const midWorldPos = [
     (startWorldPos[0] + endWorldPos[0]) / 2,
     (startWorldPos[1] + endWorldPos[1]) / 2,
     (startWorldPos[2] + endWorldPos[2]) / 2
   ];
+  */
+
+  // Use end position as target (look at where the object is going)
+  const targetPos = endWorldPos;
   
   // Scale the position to match the scene scale (0.1)
   const scaledPos = [
-    midWorldPos[0] * 0.1,
-    midWorldPos[1] * 0.1,
-    midWorldPos[2] * 0.1
+    targetPos[0] * 0.1,
+    targetPos[1] * 0.1,
+    targetPos[2] * 0.1
   ];
   
   return scaledPos;
@@ -598,58 +603,32 @@ function calculateOptimalDistanceForMotion(part, keyframe) {
  * @returns {Array} Camera angle [pitch, yaw, roll]
  */
 function getCameraAngleForMotionPhase(part, keyframe) {
-  return [Math.PI / 4, Math.PI / 4, 0];
-  const keyframeId = keyframe.keyframe_id;
   const partId = part.part_id;
   
-  // Determine face orientation for better viewing angle
-  if (partId.includes('face_top')) {
-    return [Math.PI / 2.5, 0, 0]; // Look from above for top face
+  // Default camera angle [pitch, yaw, roll]
+  const defaultAngle = [Math.PI / 4, Math.PI / 4, 0];
+  
+  // For cube parts, check if it's on the opposite side of the camera
+  // Default camera position is at positive X and positive Z (yaw = PI/4)
+  // If the cube is at negative X and negative Z, flip the camera to the other side
+  if (partId.includes('cube')) {
+    // Get the target position (end position of the motion)
+    const nextKeyframe = getNextKeyframe(part, keyframe.keyframe_id);
+    const targetKeyframe = nextKeyframe || keyframe;
+    
+    // Calculate approximate world position
+    const targetX = part.properties.pos[0] + targetKeyframe.pos[0];
+    const targetZ = part.properties.pos[2] + targetKeyframe.pos[2];
+    
+    // Default camera is at positive X, positive Z quadrant (yaw = PI/4)
+    // Check if object is in the opposite quadrant (negative X, negative Z)
+    if (targetX < 0 && targetZ < 0) {
+      // Flip camera to the opposite side (rotate yaw by 180 degrees)
+      return [Math.PI / 4, Math.PI / 4 + Math.PI, 0];
+    }
   }
   
-  if (partId.includes('face_bottom')) {
-    return [Math.PI / 6, Math.PI / 4, 0]; // Slight angle for bottom
-  }
-  
-  if (partId.includes('face_front')) {
-    return [Math.PI / 6, 0, 0]; // Straight on for front
-  }
-  
-  if (partId.includes('face_back')) {
-    return [Math.PI / 6, Math.PI, 0]; // Look from behind
-  }
-  
-  if (partId.includes('face_left')) {
-    return [Math.PI / 6, -Math.PI / 2, 0]; // Look from left
-  }
-  
-  if (partId.includes('face_right')) {
-    return [Math.PI / 6, Math.PI / 2, 0]; // Look from right
-  }
-  
-  // Animation phase-based angles
-  if (keyframeId.includes('_appear')) {
-    return [Math.PI / 6, Math.PI / 4, 0]; // Slightly elevated for appear
-  }
-  
-  if (keyframeId.includes('_displaced')) {
-    return [Math.PI / 4, Math.PI / 3, 0]; // More angled for displaced
-  }
-  
-  if (keyframeId.includes('_initial')) {
-    return [Math.PI / 3, Math.PI / 4, 0]; // Higher view for initial
-  }
-  
-  if (keyframeId.includes('_flat')) {
-    return [Math.PI / 4, Math.PI / 4, 0]; // Standard angle for flat
-  }
-  
-  if (keyframeId.includes('_flipped')) {
-    return [Math.PI / 3, Math.PI / 6, 0]; // Higher for flipped
-  }
-  
-  // Default angle - 45 degrees on both axes
-  return [Math.PI / 4, Math.PI / 4, 0];
+  return defaultAngle;
 }
 
 /**
@@ -1004,8 +983,8 @@ export function getInterpolatedCameraParameters(motionSequence, globalProgress) 
     const linearProgress = timeInMotion / activeMotion.duration;
     
     // Make camera move faster than the object to settle earlier
-    // Finish the camera move in the first 60% of the motion duration
-    const cameraFinishFactor = 0.6; 
+    // Finish the camera move in the first 30% of the motion duration
+    const cameraFinishFactor = 0.3; 
     const acceleratedProgress = Math.min(1, linearProgress / cameraFinishFactor);
     
     // Apply the same easing as the parts

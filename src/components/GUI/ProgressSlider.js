@@ -5,7 +5,7 @@ import '../../styles/ui.css';
 
 // Base speed multiplier - adjust this to make animations faster/slower globally
 // Higher values = slower animation, Lower values = faster animation
-const BASE_SPEED_MULTIPLIER = 5.0;
+const BASE_SPEED_MULTIPLIER = 8.0;
 
 export default function ProgressSlider({ motionList = [], hideAssemble = false }) {
   const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
@@ -43,7 +43,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
     setPlaySpeed(prevSpeed => {
       if (prevSpeed === 1) return 2;
       if (prevSpeed === 2) return 4;
-      if (prevSpeed === 4) return 8;
+      // if (prevSpeed === 4) return 8;
       return 1;
     });
   };
@@ -337,7 +337,24 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
           />
           
           {/* Checkpoints */}
-          {!hideAssemble && motionList.map((checkpoint, idx) => {
+          {!hideAssemble && motionList
+            .filter((checkpoint, idx, arr) => {
+              // Only show first checkpoint for each part (hide subsequent lines for same part)
+              if (idx === 0) return true;
+              const prevCheckpoint = arr[idx - 1];
+              // Extract the main part identifier (e.g., "face_front" from "face_front_strip_0_board_0_1")
+              const getMainPart = (partId) => {
+                // Match face_XXX pattern
+                const faceMatch = partId.match(/^(face_\w+)/);
+                if (faceMatch) return faceMatch[1];
+                // Match cube_XXX pattern
+                const cubeMatch = partId.match(/^(cube_\w+_\d+)/);
+                if (cubeMatch) return cubeMatch[1];
+                return partId;
+              };
+              return getMainPart(checkpoint.partId) !== getMainPart(prevCheckpoint.partId);
+            })
+            .map((checkpoint, idx) => {
             // Account for thumb radius (16px / 2 = 8px)
             const thumbRadius = 8;
             const isVertical = sliderPosition === 'right' || (mobileOrientation === 'vertical' && window.innerWidth <= 768);
@@ -351,14 +368,14 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
                   className="progress-checkpoint"
                   style={{
                     position: 'absolute',
-                    // left: '-1px',
-                    right: '0',
+                    left: '-4px',
+                    right: '-4px',
                     bottom: bottomPosition,
                     margin: 'auto',
-                    // width: '8px',
-                    // height: '8px',
+                    width: 'calc(100% + 4px)',
+                    height: '3px',
                     transform: 'translateY(50%)',
-                    borderRadius: '50%',
+                    borderRadius: '1px',
                     backgroundColor: 'rgba(255, 176, 4, 0.4)',
                     cursor: 'pointer',
                     zIndex: 1,
@@ -380,13 +397,13 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
                   style={{
                     position: 'absolute',
                     left: leftPosition,
-                    top: '0',
-                    bottom: '0',
+                    top: '-4px',
+                    bottom: '-4px',
                     margin: 'auto',
-                    height: '8px',
+                    height: 'calc(100% + 8px)',
                     transform: 'translateX(-50%)',
-                    width: '8px',
-                    borderRadius: '50%',
+                    width: '3px',
+                    borderRadius: '1px',
                     backgroundColor: 'rgba(255, 176, 4, 0.4)',
                     cursor: 'pointer',
                     zIndex: 1,

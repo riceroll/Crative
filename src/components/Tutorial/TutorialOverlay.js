@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { tutorialSteps } from './tutorialConfig';
+import { tutorialSteps, tutorialDefaults } from './tutorialConfig';
 import '../../styles/tutorial.css';
 
 export default function TutorialOverlay() {
@@ -29,57 +29,90 @@ export default function TutorialOverlay() {
       const rect = target.getBoundingClientRect();
       setTargetRect(rect);
 
-      // Calculate popup position
-      const popupWidth = 300;
-      const popupHeight = 150; // Approximate
-      const margin = 15;
+      // Get settings from config
+      const { popupWidth: desktopWidth, popupWidthMobile, popupHeight, margin, mobileBreakpoint } = tutorialDefaults;
+      const isMobile = window.innerWidth < mobileBreakpoint;
+      
+      // Get position config for current device
+      const positionConfig = isMobile ? step.mobile : step.desktop;
+      const popupWidth = isMobile ? Math.min(popupWidthMobile, window.innerWidth - 40) : desktopWidth;
+      
+      let effectivePosition = positionConfig.position;
+      const centerOnScreen = isMobile && positionConfig.centerOnScreen;
+      const arrowPositionConfig = positionConfig.arrowPosition;
+
+      // Auto-adjust position if not enough room
+      if (effectivePosition === 'top' && rect.top < popupHeight + margin) {
+        effectivePosition = 'bottom';
+      } else if (effectivePosition === 'bottom' && rect.bottom + popupHeight + margin > window.innerHeight) {
+        effectivePosition = 'top';
+      }
 
       let top, left, arrowTop, arrowLeft;
 
-      if (step.position === 'right') {
+      if (effectivePosition === 'right') {
         top = rect.top + (rect.height / 2) - (popupHeight / 2);
         left = rect.right + margin;
-        
-        // Arrow
-        arrowTop = '50%';
+        arrowTop = arrowPositionConfig;
         arrowLeft = '-6px';
         
-        // Adjust if off screen
         if (top < 10) top = 10;
         if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight - 10;
-      } else if (step.position === 'left') {
+      } else if (effectivePosition === 'left') {
         top = rect.top + (rect.height / 2) - (popupHeight / 2);
         left = rect.left - popupWidth - margin;
+        arrowTop = arrowPositionConfig;
+        arrowLeft = 'calc(100% - 6px)';
         
-        // Arrow
-        arrowTop = '50%';
-        arrowLeft = 'calc(100% - 6px)'; // Position on the right edge
-        
-        // Adjust if off screen
         if (top < 10) top = 10;
         if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight - 10;
-      } else if (step.position === 'top') {
-        top = rect.top - popupHeight - margin; // This might need dynamic height calculation
-        left = rect.left + (rect.width / 2) - (popupWidth / 2);
+      } else if (effectivePosition === 'top') {
+        top = rect.top - popupHeight - margin;
+        left = centerOnScreen 
+          ? (window.innerWidth - popupWidth) / 2 
+          : rect.left + (rect.width / 2) - (popupWidth / 2);
         
-        // Arrow
-        arrowTop = '100%'; // Point down
-        arrowLeft = '50%';
+        arrowTop = '100%';
+        if (arrowPositionConfig === 'auto') {
+          const targetCenterX = rect.left + (rect.width / 2);
+          const arrowPosFromLeft = targetCenterX - left;
+          const clampedArrowPos = Math.max(20, Math.min(popupWidth - 20, arrowPosFromLeft));
+          arrowLeft = `${clampedArrowPos}px`;
+        } else {
+          arrowLeft = arrowPositionConfig;
+        }
         
-        // Adjust if off screen
         if (left < 10) left = 10;
         if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - 10;
+        if (top < 10) top = 10;
       } else {
-        // Default or bottom
+        // bottom
         top = rect.bottom + margin;
-        left = rect.left + (rect.width / 2) - (popupWidth / 2);
+        left = centerOnScreen 
+          ? (window.innerWidth - popupWidth) / 2 
+          : rect.left + (rect.width / 2) - (popupWidth / 2);
         
         arrowTop = '-6px';
-        arrowLeft = '50%';
+        if (arrowPositionConfig === 'auto') {
+          const targetCenterX = rect.left + (rect.width / 2);
+          const arrowPosFromLeft = targetCenterX - left;
+          const clampedArrowPos = Math.max(20, Math.min(popupWidth - 20, arrowPosFromLeft));
+          arrowLeft = `${clampedArrowPos}px`;
+        } else {
+          arrowLeft = arrowPositionConfig;
+        }
+        
+        if (left < 10) left = 10;
+        if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - 10;
       }
 
-      setPopupStyle({ top, left });
-      setArrowStyle({ top: arrowTop, left: arrowLeft, marginTop: step.position === 'top' ? '-6px' : '0' });
+      setPopupStyle({ top, left, width: popupWidth });
+      setArrowStyle({ 
+        top: arrowTop, 
+        left: arrowLeft, 
+        marginTop: effectivePosition === 'top' ? '-6px' : '0',
+        marginLeft: arrowPositionConfig === 'auto' ? '-6px' : '0'
+      });
     }
   }, [currentStepIndex, isVisible]);
 
