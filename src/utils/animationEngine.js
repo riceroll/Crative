@@ -48,12 +48,66 @@ export function createMotionSequence(sceneGraph) {
   }
 
   for (const faceName of faceOrder) {
-    // board appear phase
-    let pattern = new RegExp(`face_${faceName}_strip_\\d+_board_\\d+_\\d+_appear$`);
-    collectKeyframesMatchingPattern(pattern);
+    // Collect all board keyframes for this face, then interleave appear/displaced per board
+    const boardAppearKeyframes = [];
+    const boardDisplacedKeyframes = [];
+    
+    // Collect board appear keyframes
+    Object.values(sceneGraph).forEach(part => {
+      if (part.properties.keyframes) {
+        part.properties.keyframes.forEach(keyframe => {
+          const appearPattern = new RegExp(`face_${faceName}_strip_\\d+_board_\\d+_\\d+_appear$`);
+          const displacedPattern = new RegExp(`face_${faceName}_strip_\\d+_board_\\d+_\\d+_displaced$`);
+          
+          if (appearPattern.test(keyframe.keyframe_id)) {
+            boardAppearKeyframes.push({
+              keyframe_id: keyframe.keyframe_id,
+              part_id: part.part_id,
+              keyframe: keyframe
+            });
+          }
+          if (displacedPattern.test(keyframe.keyframe_id)) {
+            boardDisplacedKeyframes.push({
+              keyframe_id: keyframe.keyframe_id,
+              part_id: part.part_id,
+              keyframe: keyframe
+            });
+          }
+        });
+      }
+    });
+    
+    // Sort boards by strip index, then by board indices
+    const sortBoards = (a, b) => {
+      const parseId = (id) => {
+        const match = id.match(/strip_(\d+)_board_(\d+)_(\d+)/);
+        return match ? { strip: parseInt(match[1]), id0: parseInt(match[2]), id1: parseInt(match[3]) } : { strip: 0, id0: 0, id1: 0 };
+      };
+      const aIds = parseId(a.keyframe_id);
+      const bIds = parseId(b.keyframe_id);
+      if (aIds.strip !== bIds.strip) return aIds.strip - bIds.strip;
+      if (aIds.id0 !== bIds.id0) return aIds.id0 - bIds.id0;
+      return aIds.id1 - bIds.id1;
+    };
+    
+    boardAppearKeyframes.sort(sortBoards);
+    boardDisplacedKeyframes.sort(sortBoards);
+    
+    // Interleave: for each board, add appear then displaced
+    boardAppearKeyframes.forEach((appearMotion, index) => {
+      phaseMotions.push(appearMotion);
+      // Find matching displaced keyframe for this board
+      const displacedMotion = boardDisplacedKeyframes.find(d => 
+        d.part_id === appearMotion.part_id && 
+        d.keyframe_id.replace('_displaced', '_appear') === appearMotion.keyframe_id.replace('_appear', '_appear')
+      );
+      if (displacedMotion) {
+        phaseMotions.push(displacedMotion);
+      }
+    });
 
     // strip displaced phase
-    pattern = new RegExp(`face_${faceName}_strip_\\d+_displaced$`);
+    let pattern = new RegExp(`face_${faceName}_strip_\\d+_displaced$`);
     collectKeyframesMatchingPattern(pattern);
 
     // in-face piece initial phase

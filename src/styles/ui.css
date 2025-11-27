@@ -157,12 +157,69 @@
     border-bottom: 1px solid var(--border-color);
   }
 
+  /* Two-column container: inputs + button */
+  .input-form-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+  }
+
   .input-form-grid {
     display: grid;
-    grid-template-columns: auto 1fr 2fr;
+    grid-template-columns: auto auto 1fr;
     row-gap: 8px;
     column-gap: 4px;
     align-items: center;
+    flex: 1;
+  }
+  
+  .input-unit-label {
+    font-size: var(--font-size-normal);
+    color: var(--secondary-text);
+    justify-self: start;
+  }
+  
+  /* Button column - aligns button to bottom, takes remaining space */
+  .input-form-button-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+  
+  /* Confirm button for dimensions */
+  .confirm-dims-btn {
+    padding: 6px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: var(--light-bg-color);
+    color: #ccc;
+    font-size: var(--font-size-small);
+    font-weight: 500;
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .confirm-dims-btn.has-changes {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+    cursor: pointer;
+  }
+  
+  .confirm-dims-btn.has-changes:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: scale(1.05);
+  }
+  
+  .confirm-dims-btn.has-changes:active {
+    transform: scale(0.95);
   }
   
   
@@ -997,21 +1054,42 @@
     box-sizing: border-box;
   }
 
-  /* InputForm compact layout */
+  /* InputForm compact layout - single row */
+  .input-form-container {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
   .input-form-grid {
     display: flex;
     flex-wrap: nowrap;
     gap: 6px;
     align-items: center;
     justify-content: flex-start;
-    width: 100%;
-    max-width: 100%;
+    flex: 1;
     box-sizing: border-box;
     overflow-x: auto;
   }
 
-  .input-form-grid label:not(.input-form-label) {
+  .input-form-grid .input-unit-label {
     display: none; /* Hide unit labels after inputs */
+  }
+  
+  /* Button column on mobile - takes full height of row */
+  .input-form-button-column {
+    display: flex;
+    align-items: stretch;
+  }
+  
+  .confirm-dims-btn {
+    padding: 4px 8px;
+    font-size: var(--font-size-small);
+    height: 100%;
   }
 
   .input-form-label {

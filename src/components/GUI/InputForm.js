@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { CrateContext } from '../../store/CrateContext';
 import {convertToInches, convertToDisplay} from '../../utils/utils';
 
@@ -7,23 +7,53 @@ export default function InputForm() {
   const { displayDims, setDisplayDims } = useContext(CrateContext);
   const {useInch, toggleUseInch} = useContext(CrateContext);
   const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
+  
+  // Pending values that haven't been confirmed yet
+  const [pendingDims, setPendingDims] = useState(displayDims);
+  const [hasChanges, setHasChanges] = useState(false);
+  
+  // Sync pendingDims when displayDims changes externally (e.g., unit toggle)
+  useEffect(() => {
+    setPendingDims(displayDims);
+    setHasChanges(false);
+  }, [displayDims]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setDisplayDims((prev) => ({ ...prev, [name]: value }));
-    setAssemblyProgress(1.0);
+    setPendingDims((prev) => ({ ...prev, [name]: value }));
+    setHasChanges(true);
   };
 
+  const handleConfirm = () => {
+    if (!hasChanges) return;
+    
+    // Apply all pending changes
+    Object.keys(pendingDims).forEach((name) => {
+      const value = pendingDims[name];
+      setInnerDims((prev) => ({ 
+        ...prev, 
+        [name]: useInch ? Number(convertToInches(value, useInch)).toFixed(2) : Number(convertToInches(value, useInch)).toFixed(1) 
+      }));
+      setDisplayDims((prev) => ({ 
+        ...prev, 
+        [name]: useInch ? parseFloat(Number(value).toFixed(2)).toString() : parseFloat(Number(value).toFixed(1)).toString() 
+      }));
+    });
+    
+    setAssemblyProgress(1.0);
+    setHasChanges(false);
+  };
 
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    setInnerDims((prev) => ({ ...prev, [name]: useInch? Number( convertToInches(value, useInch) ).toFixed(2) : Number( convertToInches(value, useInch) ).toFixed(1) }));
-    setDisplayDims((prev) => ({ ...prev, [name]: useInch ? parseFloat(Number(value).toFixed(2)).toString() : parseFloat(Number(value).toFixed(1)).toString() }));
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleConfirm();
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // setInnerDims(localDims);
+    handleConfirm();
   };
 
   return (
@@ -52,70 +82,70 @@ export default function InputForm() {
 
       </div>
 
-      {/* Grid container with two columns: one for labels, one for inputs */}
-      <div className='input-form-grid'>
-        <label className='input-form-label' htmlFor="width">
-          Width:
-        </label>
-        <input
-          className="number-input"
-          id="width"
-          type="number"
-          name="width"
-          value={displayDims.width}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleBlur(e);
-            }
-          }}
-        />
-        <label>
-          {useInch ? 'in' : 'cm'}
-        </label>
+      {/* Two column layout: inputs column + button column */}
+      <div className='input-form-container'>
+        {/* Left column: inputs grid */}
+        <div className='input-form-grid'>
+          <label className='input-form-label' htmlFor="width">
+            Width:
+          </label>
+          <input
+            className="number-input"
+            id="width"
+            type="number"
+            name="width"
+            value={pendingDims.width}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+          />
+          <label className='input-unit-label'>
+            {useInch ? 'in' : 'cm'}
+          </label>
 
-        <label className='input-form-label' htmlFor="depth">
-          Depth:
-        </label>
-        <input
-          className="number-input"
-          id="depth"
-          type="number"
-          name="depth"
-          value={displayDims.depth}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleBlur(e);
-            }
-          }}
-        />
-        <label>
-          {useInch ? 'in' : 'cm'}
-        </label>
+          <label className='input-form-label' htmlFor="depth">
+            Depth:
+          </label>
+          <input
+            className="number-input"
+            id="depth"
+            type="number"
+            name="depth"
+            value={pendingDims.depth}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+          />
+          <label className='input-unit-label'>
+            {useInch ? 'in' : 'cm'}
+          </label>
 
-        <label className='input-form-label' htmlFor="height">
-          Height:
-        </label>
-        <input
-          className="number-input"
-          id="height"
-          type="number"
-          name="height"
-          value={displayDims.height}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleBlur(e);
-            }
-          }}
-        />
-        <label>
-          {useInch ? 'in' : 'cm'}
-        </label>
+          <label className='input-form-label' htmlFor="height">
+            Height:
+          </label>
+          <input
+            className="number-input"
+            id="height"
+            type="number"
+            name="height"
+            value={pendingDims.height}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+          />
+          <label className='input-unit-label'>
+            {useInch ? 'in' : 'cm'}
+          </label>
+        </div>
+        
+        {/* Right column: confirm button */}
+        <div className='input-form-button-column'>
+          <button
+            type="button"
+            className={`confirm-dims-btn ${hasChanges ? 'has-changes' : ''}`}
+            onClick={handleConfirm}
+            disabled={!hasChanges}
+          >
+            Apply
+          </button>
+        </div>
       </div>
     </form>
   );
