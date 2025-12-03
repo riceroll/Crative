@@ -191,7 +191,7 @@
   /* Confirm button for dimensions */
   .confirm-dims-btn {
     padding: 6px 12px;
-    border: 2px solid #ddd;
+    border: 2px solid transparent;
     border-radius: 4px;
     background: var(--light-bg-color);
     color: #ccc;
@@ -690,8 +690,8 @@
 .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #4a80f5;
   cursor: pointer;
@@ -700,8 +700,8 @@
 }
 
 .progress-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #4a80f5;
   cursor: pointer;
@@ -770,9 +770,9 @@
 .fullscreen-slider .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
-  background: rgba(255, 215, 0, 0.6);
+  width: 14px;
+  height: 14px;
+  background: transparent;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -788,9 +788,9 @@
 }
 
 .fullscreen-slider .progress-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: rgba(255, 215, 0, 0.6);
+  width: 14px;
+  height: 14px;
+  background: transparent;
   border-radius: 50%;
   cursor: pointer;
   border: none;
@@ -950,16 +950,16 @@
 .vertical-slider .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #4a80f5;
   cursor: pointer;
 }
 
 .vertical-slider .progress-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #4a80f5;
   cursor: pointer;
@@ -1063,17 +1063,19 @@
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
   }
   
   .input-form-grid {
     display: flex;
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
     justify-content: flex-start;
     flex: 1;
+    min-width: 0;
     box-sizing: border-box;
-    overflow-x: auto;
+    overflow: hidden;
   }
 
   .input-form-grid .input-unit-label {
@@ -1096,7 +1098,7 @@
     width: auto;
     font-size: var(--font-size-small);
     margin-left: 0;
-    margin-right: 4px;
+    margin-right: 2px;
     box-sizing: border-box;
     flex-shrink: 0;
     white-space: nowrap;
@@ -1104,12 +1106,12 @@
 
   .number-input {
     flex: 1;
-    min-width: 50px;
-    max-width: 70px;
-    padding: 4px 6px;
+    min-width: 40px;
+    max-width: 60px;
+    padding: 4px 4px;
     font-size: var(--font-size-small);
     box-sizing: border-box;
-    margin-right: 4px;
+    margin-right: 2px;
   }
 
   /* Options list horizontal scroll */
@@ -1375,16 +1377,16 @@
     height: 100% !important;
     flex: 1 !important;
     margin: 0 !important;
-    background: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 3px !important;
   }
   
   .fullscreen-slider.mobile-vertical .progress-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
-    background: rgba(255, 215, 0, 0.6);
+    width: 14px;
+    height: 14px;
+    background: transparent;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1400,9 +1402,9 @@
   }
   
   .fullscreen-slider.mobile-vertical .progress-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: rgba(255, 215, 0, 0.6);
+    width: 14px;
+    height: 14px;
+    background: transparent;
     border-radius: 50%;
     cursor: pointer;
     border: none;
@@ -1542,16 +1544,16 @@
     width: 100% !important;
     height: 6px !important;
     flex: 1 !important;
-    background: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 3px !important;
   }
   
   .fullscreen-slider.mobile-horizontal .progress-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
-    background: rgba(255, 215, 0, 0.6);
+    width: 14px;
+    height: 14px;
+    background: transparent;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1567,9 +1569,9 @@
   }
   
   .fullscreen-slider.mobile-horizontal .progress-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: rgba(255, 215, 0, 0.6);
+    width: 14px;
+    height: 14px;
+    background: transparent;
     border-radius: 50%;
     cursor: pointer;
     border: none;

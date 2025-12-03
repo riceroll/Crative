@@ -194,7 +194,8 @@ function generateStripParts(boards, faceId, faceName, sceneGraph) {
     const stripCenterPos = calculateStripCenterPosition(stripBoards);
     
     // Calculate perpendicular direction for strip keyframes
-    const perpendicularDirection = calculateStripPerpendicularDirection(stripBoards, faceName);
+    // Pass all boards from the face to handle single-board strips
+    const perpendicularDirection = calculateStripPerpendicularDirection(stripBoards, faceName, boards);
 
     // Create strip part
     sceneGraph[stripId] = {
@@ -587,7 +588,7 @@ function generateFaceKeyframes(faceId, faceData, assemblyDisplacement) {
  * @param {string} boardId - Board part ID
  * @param {Object} board - Board data
  * @param {Array} explosionDirection - Direction for initial displacement (vertical)
- * @param {Array} alongStripDirection - Direction along the strip for horizontal displacement
+ * @param {Array} alongStripDirection - Direction along the strip for horizontal displacement (null if single board)
  * @param {number} stripIndex - Index of the parent strip (unused, kept for API compatibility)
  * @returns {Array} Array of keyframes
  */
@@ -595,43 +596,69 @@ function generateBoardKeyframes(boardId, board, explosionDirection, alongStripDi
   // Vertical explosion distance for appear animation
   const explosionDistance = assemblyDisplacement * 0.5;
   
-  // Fixed horizontal displacement for all boards (not progressive)
-  // Since each board moves horizontally right after appearing, no accumulation needed
-  const horizontalDisplacement = assemblyDisplacement * 0.3;
-  
-  // Calculate displacement vectors using utilities
+  // Calculate vertical offset
   const verticalOffset = scaleVector(explosionDirection, explosionDistance);
-  const horizontalOffset = scaleVector(alongStripDirection, horizontalDisplacement);
   
-  // Appear position: elevated + offset along strip direction
-  const appearPos = addVectors(verticalOffset, horizontalOffset);
+  // Only add horizontal displacement if:
+  // 1. alongStripDirection is provided (i.e., multiple boards in strip)
+  // 2. id_1 > 0 (not the first board in the strip)
+  // The first board in each strip (id_1 === 0) doesn't need horizontal movement
+  // Subsequent boards (id_1 > 0) slide horizontally to connect to previous board in same strip
+  const needsHorizontalMovement = alongStripDirection && board.id_1 > 0;
   
-  // Displaced position: landed but still offset along strip direction
-  const displacedPos = horizontalOffset;
+  if (needsHorizontalMovement) {
+    const horizontalDisplacement = assemblyDisplacement * 0.3;
+    const horizontalOffset = scaleVector(alongStripDirection, horizontalDisplacement);
+    
+    // Appear position: elevated + offset along strip direction
+    const appearPos = addVectors(verticalOffset, horizontalOffset);
+    
+    // Displaced position: landed but still offset along strip direction
+    const displacedPos = horizontalOffset;
 
-  return [
-    {
-      keyframe_id: `${boardId}_appear`,
-      pos: appearPos,
-      rot: [0, 0, 0],
-      alpha: 0,
-      duration: 0.1
-    },
-    {
-      keyframe_id: `${boardId}_displaced`,
-      pos: displacedPos,
-      rot: [0, 0, 0],
-      alpha: 1,
-      duration: 0.1
-    },
-    {
-      keyframe_id: `${boardId}_final`,
-      pos: [0, 0, 0],
-      rot: [0, 0, 0],
-      alpha: 1,
-      duration: null
-    }
-  ];
+    return [
+      {
+        keyframe_id: `${boardId}_appear`,
+        pos: appearPos,
+        rot: [0, 0, 0],
+        alpha: 0,
+        duration: 0.1
+      },
+      {
+        keyframe_id: `${boardId}_displaced`,
+        pos: displacedPos,
+        rot: [0, 0, 0],
+        alpha: 1,
+        duration: 0.1
+      },
+      {
+        keyframe_id: `${boardId}_final`,
+        pos: [0, 0, 0],
+        rot: [0, 0, 0],
+        alpha: 1,
+        duration: null
+      }
+    ];
+  } else {
+    // First board in strip OR single board: only vertical appear animation, no horizontal displacement
+    // No need to slide horizontally since there's no previous board to connect to
+    return [
+      {
+        keyframe_id: `${boardId}_appear`,
+        pos: verticalOffset,
+        rot: [0, 0, 0],
+        alpha: 0,
+        duration: 0.1
+      },
+      {
+        keyframe_id: `${boardId}_final`,
+        pos: [0, 0, 0],
+        rot: [0, 0, 0],
+        alpha: 1,
+        duration: null
+      }
+    ];
+  }
 }
 
 /**
@@ -850,25 +877,33 @@ function addVectors(a, b) {
 
 /**
  * Default directions for faces - used for both along-strip and perpendicular calculations
+ * 
+ * Based on faceLayoutsCalculator.js faceConfigs:
+ * - front:  sizesA = x, sizesB = y  → strips along Y, perpendicular along X
+ * - back:   sizesA = x, sizesB = y  → strips along Y, perpendicular along X
+ * - left:   sizesA = z, sizesB = y  → strips along Y, perpendicular along Z
+ * - right:  sizesA = z, sizesB = y  → strips along Y, perpendicular along Z
+ * - top:    sizesA = x, sizesB = z  → strips along Z, perpendicular along X
+ * - bottom: sizesA = x, sizesB = z  → strips along Z, perpendicular along X
  */
 const DEFAULT_FACE_DIRECTIONS = {
-  // Along-strip direction (direction boards are arranged)
+  // Along-strip direction (direction boards are arranged within a strip, along sizesB)
   along: {
-    front: [1, 0, 0],
-    back: [1, 0, 0],
-    left: [0, 0, 1],
-    right: [0, 0, 1],
-    top: [1, 0, 0],
-    bottom: [1, 0, 0]
+    front: [0, 1, 0],  // Y direction
+    back: [0, 1, 0],   // Y direction
+    left: [0, 1, 0],   // Y direction
+    right: [0, 1, 0],  // Y direction
+    top: [0, 0, 1],    // Z direction
+    bottom: [0, 0, 1]  // Z direction
   },
-  // Perpendicular direction (direction strips move to assemble)
+  // Perpendicular direction (direction strips move to assemble, along sizesA)
   perpendicular: {
-    front: [0, 0, 1],
-    back: [0, 0, 1],
-    left: [1, 0, 0],
-    right: [1, 0, 0],
-    top: [0, 0, 1],
-    bottom: [0, 0, 1]
+    front: [1, 0, 0],  // X direction
+    back: [1, 0, 0],   // X direction
+    left: [0, 0, 1],   // Z direction
+    right: [0, 0, 1],  // Z direction
+    top: [1, 0, 0],    // X direction
+    bottom: [1, 0, 0]  // X direction
   }
 };
 
@@ -916,19 +951,62 @@ function calculatePerpendicularFromAlong(alongDir) {
 
 /**
  * Calculate perpendicular direction for strip animation
- * Strips move perpendicular to their length
+ * Strips move perpendicular to their length (i.e., along the direction strips are arranged)
  * @param {Array} stripBoards - Array of boards in the strip
  * @param {string} faceName - Face name (front, back, etc.)
+ * @param {Array} allFaceBoards - All boards from the face (optional, for single-board strips)
  * @returns {Array} Perpendicular direction [x, y, z]
  */
-function calculateStripPerpendicularDirection(stripBoards, faceName) {
+function calculateStripPerpendicularDirection(stripBoards, faceName, allFaceBoards) {
+  // First try to calculate from boards within the strip
   const alongDir = calculateStripDirectionFromBoards(stripBoards);
   
   if (alongDir) {
     return calculatePerpendicularFromAlong(alongDir);
   }
 
+  // If strip has only one board, try to calculate perpendicular direction
+  // by looking at boards from different strips (along id_0 direction)
+  if (allFaceBoards && allFaceBoards.length > 1) {
+    const perpendicularDir = calculateDirectionAcrossStrips(allFaceBoards);
+    if (perpendicularDir) {
+      return perpendicularDir;
+    }
+  }
+
   return DEFAULT_FACE_DIRECTIONS.perpendicular[faceName] || [0, 0, 1];
+}
+
+/**
+ * Calculate the direction across strips (from one strip to another)
+ * This is used when each strip has only one board
+ * @param {Array} allFaceBoards - All boards from the face
+ * @returns {Array|null} Direction across strips or null if can't calculate
+ */
+function calculateDirectionAcrossStrips(allFaceBoards) {
+  // Find boards from different strips (different id_0)
+  const boardsByStrip = {};
+  allFaceBoards.forEach(board => {
+    if (!boardsByStrip[board.id_0]) {
+      boardsByStrip[board.id_0] = board;
+    }
+  });
+  
+  const stripIndices = Object.keys(boardsByStrip).map(Number).sort((a, b) => a - b);
+  
+  if (stripIndices.length < 2) return null;
+  
+  const board1 = boardsByStrip[stripIndices[0]];
+  const board2 = boardsByStrip[stripIndices[1]];
+  
+  // Calculate direction from strip 0 to strip 1
+  const direction = [
+    board2.position[0] - board1.position[0],
+    board2.position[1] - board1.position[1],
+    board2.position[2] - board1.position[2]
+  ];
+  
+  return normalizeVector(direction);
 }
 
 /**
@@ -936,16 +1014,13 @@ function calculateStripPerpendicularDirection(stripBoards, faceName) {
  * This is used for board displacement - boards slide along the strip to assemble
  * @param {Array} stripBoards - Array of boards in the strip
  * @param {string} faceName - Face name (front, back, etc.)
- * @returns {Array} Along-strip direction [x, y, z]
+ * @returns {Array|null} Along-strip direction [x, y, z], or null if single board (no horizontal movement needed)
  */
 function calculateStripAlongDirection(stripBoards, faceName) {
+  // If only one board in strip, return null - no horizontal movement needed
+  // The purpose of horizontal movement is to connect multiple boards
   const alongDir = calculateStripDirectionFromBoards(stripBoards);
-  
-  if (alongDir) {
-    return alongDir;
-  }
-
-  return DEFAULT_FACE_DIRECTIONS.along[faceName] || [1, 0, 0];
+  return alongDir; // Will be null for single-board strips
 }
 
 /**
