@@ -235,10 +235,18 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
       if (idx === 0) return true;
       const prevCheckpoint = arr[idx - 1];
       const getMainPart = (partId) => {
+        // Match face_XXX pattern
         const faceMatch = partId.match(/^(face_\w+)/);
-        if (faceMatch) return faceMatch[1];
+        if (faceMatch) {
+            const facePrefix = faceMatch[1];
+            if (partId.includes('_piece_')) return `${facePrefix}_piece`;
+            if (partId.includes('_cube_')) return `${facePrefix}_cube`;
+            if (partId.includes('_board_') || partId.includes('_strip_')) return `${facePrefix}_board`;
+            return `${facePrefix}_main`;
+        }
+        // Match cube_XXX pattern
         const cubeMatch = partId.match(/^(cube_\w+_\d+)/);
-        if (cubeMatch) return cubeMatch[1];
+        if (cubeMatch) return 'standalone_cube'; // Group all standalone cubes
         return partId;
       };
       return getMainPart(checkpoint.partId) !== getMainPart(prevCheckpoint.partId);
@@ -303,6 +311,33 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
 
   // Helper to get assembly instruction from part ID
   const getAssemblyInstruction = (partId) => {
+    // Helper to capitalize first letter
+    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+    // Check for Face pattern first (face_NAME...)
+    const faceMatch = partId.match(/^face_([a-z]+)/);
+    
+    if (faceMatch) {
+      const faceName = capitalize(faceMatch[1]);
+      
+      if (partId.includes('_board_') || partId.includes('_strip_')) {
+        return `Board on ${faceName} Face`;
+      } else if (partId.includes('_cube_')) {
+        return `Cube on ${faceName} Face`;
+      } else if (partId.includes('_piece_')) {
+        return `Connect on ${faceName} Face`;
+      } else {
+        // Just the face itself
+        return `${faceName} Face`;
+      }
+    }
+    
+    // Check for standalone Cube pattern
+    if (partId.startsWith('cube_')) {
+      return 'Cube';
+    }
+
+    // Fallback to original logic if no match
     const parts = partId.split('_');
     const result = [];
     

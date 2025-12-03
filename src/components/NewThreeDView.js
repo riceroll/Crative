@@ -331,70 +331,34 @@ function getAssemblyInstruction(partId) {
     return "Assembly Instructions";
   }
 
-  // Normalize: convert dashes to underscores for consistent splitting
-  const normalized = partId.toLowerCase().replace(/-/g, '_');
+  // Helper to capitalize first letter
+  const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // Check for Face pattern first (face_NAME...)
+  const faceMatch = partId.match(/^face_([a-z]+)/);
   
-  // Component names to split by
-  const componentNames = ['face', 'strip', 'board', 'cube', 'screw', 'piece', 'bar'];
-  
-  // Split the string by component names using regex
-  const pattern = new RegExp(`_(${componentNames.join('|')})_`, 'g');
-  const segments = normalized.split(pattern);
-  
-  // Parse each segment into a readable format
-  const result = [];
-  let i = 0;
-  
-  while (i < segments.length) {
-    const segment = segments[i];
+  if (faceMatch) {
+    const faceName = capitalize(faceMatch[1]);
     
-    // Check if this segment is a component name
-    if (componentNames.includes(segment)) {
-      const componentName = segment.charAt(0).toUpperCase() + segment.slice(1);
-      // Get the next segment which contains the details (location/index)
-      if (i + 1 < segments.length) {
-        const details = segments[i + 1].split('_').filter(s => s);
-        if (details.length > 0) {
-          // Special case for board: board_0_1 -> Board-1 (skip first index)
-          if (segment === 'board' && details.length >= 2) {
-            const boardIndex = details[1]; // Use second index
-            result.push(`${componentName}-${boardIndex}`);
-          } else {
-            // Format: Component-Detail1-Detail2...
-            const formattedDetails = details.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join('-');
-            result.push(`${componentName}-${formattedDetails}`);
-          }
-        } else {
-          result.push(componentName);
-        }
-        i += 2;
-      } else {
-        result.push(componentName);
-        i++;
-      }
-    } else if (segment && !segment.match(/^_+$/)) {
-      // This is the first part (e.g., "face_top" before we hit "strip")
-      const parts = segment.split('_').filter(s => s);
-      if (parts.length > 0) {
-        const componentIdx = parts.findIndex(p => componentNames.includes(p));
-        if (componentIdx !== -1) {
-          const componentName = parts[componentIdx].charAt(0).toUpperCase() + parts[componentIdx].slice(1);
-          const details = parts.slice(componentIdx + 1);
-          if (details.length > 0) {
-            const formattedDetails = details.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join('-');
-            result.push(`${componentName}-${formattedDetails}`);
-          } else {
-            result.push(componentName);
-          }
-        }
-      }
-      i++;
+    if (partId.includes('_board_') || partId.includes('_strip_')) {
+      return `Assembling: Board on ${faceName} Face`;
+    } else if (partId.includes('_cube_')) {
+      return `Assembling: Cube on ${faceName} Face`;
+    } else if (partId.includes('_piece_')) {
+      return `Assembling: Connect on ${faceName} Face`;
     } else {
-      i++;
+      // Just the face itself
+      return `Assembling: ${faceName} Face`;
     }
   }
   
-  return result.length > 0 ? `Assembling: ${result.join(' ')}` : `Assembling: ${partId}`;
+  // Check for standalone Cube pattern
+  if (partId.startsWith('cube_')) {
+    return 'Assembling: Cube';
+  }
+
+  // Fallback
+  return `Assembling: ${partId}`;
 }
 
 /**
