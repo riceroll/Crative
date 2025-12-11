@@ -674,7 +674,7 @@ function generateCubeKeyframes(cubeId, cube) {
       pos: calculateRelativePosition(cube.initial_position, cube.final_position),
       rot: calculateRelativeRotation(cube.initial_rotation, cube.final_rotation),
       alpha: 0,
-      duration: 0.1
+      duration: 0.05
     },
     {
       keyframe_id: `${cubeId}_final`,

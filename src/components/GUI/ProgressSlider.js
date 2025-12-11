@@ -5,7 +5,7 @@ import '../../styles/ui.css';
 
 // Base speed multiplier - adjust this to make animations faster/slower globally
 // Higher values = slower animation, Lower values = faster animation
-const BASE_SPEED_MULTIPLIER = 8.0;
+const BASE_SPEED_MULTIPLIER = 6.0;
 
 export default function ProgressSlider({ motionList = [], hideAssemble = false }) {
   const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
