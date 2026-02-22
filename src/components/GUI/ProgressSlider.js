@@ -1,49 +1,124 @@
 import React, { useContext, useState, useRef, useEffect, useMemo } from 'react';
-import { MdSkipPrevious, MdSkipNext, MdPlayArrow, MdPause, MdUnfoldMore, MdUnfoldLess } from 'react-icons/md';
+import { MdSkipPrevious, MdSkipNext, MdPlayArrow, MdPause } from 'react-icons/md';
 import { CrateContext } from '../../store/CrateContext';
 import '../../styles/ui.css';
 
 // Base speed multiplier - adjust this to make animations faster/slower globally
 // Higher values = slower animation, Lower values = faster animation
-const BASE_SPEED_MULTIPLIER = 6.0;
+const BASE_SPEED_MULTIPLIER = 12.0;
+
+// Default speed for simple player mode
+const SIMPLE_PLAYER_SPEED = 1;
 
 export default function ProgressSlider({ motionList = [], hideAssemble = false }) {
-  const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext);
+  const { assemblyProgress, setAssemblyProgress, advancedPlayerMode } = useContext(CrateContext);
   const [sliderPosition, setSliderPosition] = useState('bottom');
-  const [mobileOrientation, setMobileOrientation] = useState('horizontal'); // 'vertical' or 'horizontal'
   const [hoveredCheckpoint, setHoveredCheckpoint] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
+  const [playDirection, setPlayDirection] = useState(1); // 1 = forward (assemble), -1 = backward (disassemble)
   const [targetProgress, setTargetProgress] = useState(null);
   const sliderRef = useRef(null);
   const animationRef = useRef(null);
+  const startProgressRef = useRef(0);
 
   const handleChange = (e) => {
-    setAssemblyProgress(parseFloat(e.target.value));
+    const val = parseFloat(e.target.value);
+    setAssemblyProgress(val);
+    startProgressRef.current = val;
     setTargetProgress(null);
     setIsPlaying(false);
   };
 
-  const handlePlay = () => {
-    // If we are at the end (or very close to it), restart from beginning
+  // --- Simple player handlers ---
+  const handleAssemble = () => {
+    // If at the end, reset to beginning and play (always, even if "playing")
     if (assemblyProgress >= 0.999) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
       setAssemblyProgress(0);
+      startProgressRef.current = 0;
+      setPlayDirection(1);
+      setPlaySpeed(SIMPLE_PLAYER_SPEED);
+      setIsPlaying(false); // force false first
+      setTargetProgress(null);
+      // Use timeout to ensure state resets before re-triggering
+      setTimeout(() => setIsPlaying(true), 0);
+      return;
     }
     
+    // If already playing forward, pause
+    if (isPlaying && playDirection === 1) {
+      handleSimplePause();
+      return;
+    }
+    
+    startProgressRef.current = assemblyProgress;
+    setPlayDirection(1);
+    setPlaySpeed(SIMPLE_PLAYER_SPEED);
     setIsPlaying(true);
     setTargetProgress(null);
-    if (playSpeed === 1) {
+  };
+
+  const handleDisassemble = () => {
+    // If at the start, reset to end and play (always, even if "playing")
+    if (assemblyProgress <= 0.001) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      setAssemblyProgress(1.0);
+      startProgressRef.current = 1.0;
+      setPlayDirection(-1);
+      setPlaySpeed(SIMPLE_PLAYER_SPEED);
+      setIsPlaying(false); // force false first
+      setTargetProgress(null);
+      setTimeout(() => setIsPlaying(true), 0);
+      return;
+    }
+    
+    // If already playing backward, pause
+    if (isPlaying && playDirection === -1) {
+      handleSimplePause();
+      return;
+    }
+    
+    startProgressRef.current = assemblyProgress;
+    setPlayDirection(-1);
+    setPlaySpeed(SIMPLE_PLAYER_SPEED);
+    setIsPlaying(true);
+    setTargetProgress(null);
+  };
+
+  const handleSimplePause = () => {
+    setIsPlaying(false);
+    setTargetProgress(null);
+  };
+
+  // --- Advanced player handlers ---
+  const handlePlay = () => {
+    if (assemblyProgress >= 0.999) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      setAssemblyProgress(0);
+      startProgressRef.current = 0;
+      setPlayDirection(1);
+      setIsPlaying(false);
+      setTargetProgress(null);
+      if (playSpeed === 0) setPlaySpeed(1);
+      setTimeout(() => setIsPlaying(true), 0);
+      return;
+    }
+    
+    startProgressRef.current = assemblyProgress;
+    setPlayDirection(1);
+    setIsPlaying(true);
+    setTargetProgress(null);
+    if (playSpeed === 0) {
       setPlaySpeed(1);
     }
   };
 
   const handleCycleSpeed = () => {
-    // Cycle through speeds: 1 → 2 → 4 → 8 → 1
     setPlaySpeed(prevSpeed => {
       if (prevSpeed === 1) return 2;
       if (prevSpeed === 2) return 4;
-      // if (prevSpeed === 4) return 8;
       return 1;
     });
   };
@@ -57,56 +132,53 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
     if (motionList.length === 0) return;
     const nextCheckpoint = motionList.find(cp => cp.startProgress > assemblyProgress);
     if (nextCheckpoint) {
+      startProgressRef.current = assemblyProgress;
       setTargetProgress(nextCheckpoint.startProgress);
-      setIsPlaying(false); // Ensure normal playback is off
+      setIsPlaying(false);
     }
   };
 
   const handlePrev = () => {
     if (motionList.length === 0) return;
     
-    // Find checkpoints that are clearly before current position (with small threshold)
     const threshold = 0.001;
     const prevCheckpoints = motionList.filter(cp => cp.startProgress < assemblyProgress - threshold);
     
     if (prevCheckpoints.length > 0) {
       const prevCheckpoint = prevCheckpoints[prevCheckpoints.length - 1];
+      startProgressRef.current = assemblyProgress;
       setTargetProgress(prevCheckpoint.startProgress);
-      setIsPlaying(false); // Ensure normal playback is off
+      setIsPlaying(false);
     } else {
-      // No previous checkpoint, go to start
+      startProgressRef.current = assemblyProgress;
       setTargetProgress(0);
-      setIsPlaying(false); // Ensure normal playback is off
+      setIsPlaying(false);
     }
   };
 
+  // Animation loop
   useEffect(() => {
     if (isPlaying || targetProgress !== null) {
-      // Calculate total duration from motionList
       const totalDuration = motionList.length > 0 
         ? Math.max(...motionList.map(m => m.endTime))
-        : 30; // Fallback to 30 seconds if no motions
+        : 30;
       
-      // Apply base speed multiplier
       const adjustedDuration = totalDuration * BASE_SPEED_MULTIPLIER;
       
       const startTime = performance.now();
-      const startProgress = assemblyProgress;
+      const startProgress = startProgressRef.current;
       
-      // Determine effective speed and direction
-      let effectiveSpeed = playSpeed;
+      let effectiveSpeed = playSpeed * playDirection;
       let isSeeking = false;
       
       if (targetProgress !== null) {
         isSeeking = true;
-        // Direction: 1 for forward, -1 for backward
         const direction = targetProgress > startProgress ? 1 : -1;
-        // Use 4x speed for seeking
         effectiveSpeed = 4 * direction;
       }
 
       const animate = (currentTime) => {
-        const elapsed = (currentTime - startTime) / 1000; // Convert to seconds
+        const elapsed = (currentTime - startTime) / 1000;
         const progressIncrement = (elapsed / adjustedDuration) * effectiveSpeed;
         const newProgress = startProgress + progressIncrement;
         
@@ -114,14 +186,12 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
         let finalProgress = newProgress;
 
         if (isSeeking) {
-          // Check if we reached or passed the target
           if ((effectiveSpeed > 0 && newProgress >= targetProgress) || 
               (effectiveSpeed < 0 && newProgress <= targetProgress)) {
             finalProgress = targetProgress;
             finished = true;
           }
         } else {
-          // Normal playback limits
           if (newProgress >= 1.0) {
             finalProgress = 1.0;
             finished = true;
@@ -149,12 +219,12 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, playSpeed, assemblyProgress, setAssemblyProgress, motionList, targetProgress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, playSpeed, playDirection, targetProgress]);
 
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore if user is typing in an input field
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
       }
@@ -162,31 +232,41 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
       switch (e.code) {
         case 'ArrowLeft':
           e.preventDefault();
-          handlePrev();
+          if (advancedPlayerMode) {
+            handlePrev();
+          } else {
+            handleDisassemble();
+          }
           break;
         case 'ArrowRight':
           e.preventDefault();
-          handleNext();
+          if (advancedPlayerMode) {
+            handleNext();
+          } else {
+            handleAssemble();
+          }
           break;
         case 'Space':
           e.preventDefault();
           if (isPlaying || targetProgress !== null) {
-            handlePause();
-          } else {
+            handleSimplePause();
+          } else if (advancedPlayerMode) {
             handlePlay();
+          } else {
+            handleAssemble();
           }
           break;
         case 'Digit1':
-          setPlaySpeed(1);
+          if (advancedPlayerMode) setPlaySpeed(1);
           break;
         case 'Digit2':
-          setPlaySpeed(2);
+          if (advancedPlayerMode) setPlaySpeed(2);
           break;
         case 'Digit3':
-          setPlaySpeed(4);
+          if (advancedPlayerMode) setPlaySpeed(4);
           break;
         case 'Digit4':
-          setPlaySpeed(8);
+          if (advancedPlayerMode) setPlaySpeed(8);
           break;
         default:
           break;
@@ -195,7 +275,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, assemblyProgress, motionList, targetProgress]);
+  }, [isPlaying, assemblyProgress, motionList, targetProgress, advancedPlayerMode, playDirection]);
 
   const handleCheckpointClick = (checkpoint) => {
     // Add tiny offset to ensure motion becomes active (currentTime > startTime)
@@ -207,18 +287,11 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
     
     const sliderRect = sliderRef.current.getBoundingClientRect();
     
-    // Position tooltip based on orientation
-    if (mobileOrientation === 'vertical' && window.innerWidth <= 768) {
-      setTooltipPosition({
-        x: Math.round(sliderRect.right + 10),
-        y: Math.round(event.clientY)
-      });
-    } else {
-      setTooltipPosition({
-        x: Math.round(event.clientX),
-        y: Math.round(sliderRect.top - 10)
-      });
-    }
+    // Position tooltip
+    setTooltipPosition({
+      x: Math.round(event.clientX),
+      y: Math.round(sliderRect.top - 10)
+    });
     setHoveredCheckpoint(checkpoint);
   };
 
@@ -265,7 +338,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
   const handleContainerMouseMove = (e) => {
     if (!sliderRef.current) return;
     const rect = sliderRef.current.getBoundingClientRect();
-    const isVertical = sliderPosition === 'right' || (mobileOrientation === 'vertical' && window.innerWidth <= 768);
+    const isVertical = sliderPosition === 'right';
     
     let progress;
     if (isVertical) {
@@ -366,72 +439,46 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
 
   return (
     <>
-      <div className={`card ${sliderPosition === 'bottom' ? 'fullscreen-slider' : ''} ${sliderPosition === 'right' ? 'vertical-slider' : ''} ${mobileOrientation === 'vertical' ? 'mobile-vertical' : 'mobile-horizontal'}`}>
+      <div className={`card fullscreen-slider mobile-horizontal`}>
         <div className="card-title">Assembly Progress</div>
 
         <div className="slider-container" style={{ position: 'relative' }}>
-          {/* Orientation Toggle Button (Mobile Only) */}
-          <button
-            onClick={() => setMobileOrientation(mobileOrientation === 'vertical' ? 'horizontal' : 'vertical')}
-            className="orientation-toggle-button"
-            title={mobileOrientation === 'vertical' ? 'Switch to horizontal' : 'Switch to vertical'}
-          >
-            {mobileOrientation === 'vertical' ? <MdUnfoldLess /> : <MdUnfoldMore />}
-          </button>
-
-          {/* Disassemble label - positioned before controls and slider */}
-          {hideAssemble && (
-            <div className="slider-value hide-on-mobile" style={{ flexShrink: 0 }}>Disassemble</div>
-          )}
-
-          {/* Playback Controls (only show here if NOT mobile vertical) */}
-          {!hideAssemble && (
+          {/* LEFT SIDE: Simple mode = Disassemble text, Advanced mode = playback controls */}
+          {advancedPlayerMode ? (
             <div className="playback-controls" id="tutorial-video-controls">
-              <button
-                onClick={handlePrev}
-                className="playback-button"
-                title="Previous checkpoint"
-              >
+              <button onClick={handlePrev} className="playback-button" title="Previous checkpoint">
                 <MdSkipPrevious />
               </button>
               
               {!isPlaying ? (
-                <button
-                  onClick={handlePlay}
-                  className="playback-button"
-                  title="Play"
-                >
+                <button onClick={handlePlay} className="playback-button" title="Play">
                   <MdPlayArrow />
                 </button>
               ) : (
-                <button
-                  onClick={handlePause}
-                  className="playback-button"
-                  title="Pause"
-                >
+                <button onClick={handlePause} className="playback-button" title="Pause">
                   <MdPause />
                 </button>
               )}
               
-              <button
-                onClick={handleCycleSpeed}
-                className="playback-button speed-button"
-                title="Cycle playback speed"
-              >
+              <button onClick={handleCycleSpeed} className="playback-button speed-button" title="Cycle playback speed">
                 ×{playSpeed}
               </button>
               
-              <button
-                onClick={handleNext}
-                className="playback-button"
-                title="Next checkpoint"
-              >
+              <button onClick={handleNext} className="playback-button" title="Next checkpoint">
                 <MdSkipNext />
               </button>
             </div>
+          ) : (
+            <div 
+              className="slider-action-label"
+              onClick={isPlaying && playDirection === -1 ? handleSimplePause : handleDisassemble}
+              style={{ cursor: 'pointer' }}
+            >
+              {isPlaying && playDirection === -1 ? 'Pause' : 'Disassemble'}
+            </div>
           )}
 
-          {/* Wrapper for slider and checkpoints */}
+          {/* Slider and checkpoints */}
           <div 
             ref={sliderRef} 
             id="tutorial-slider-bar" 
@@ -439,188 +486,149 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
             onMouseMove={handleContainerMouseMove}
             onMouseLeave={handleContainerMouseLeave}
           >
-          <input
-            id="progress-slider"
-            type="range"
-            min="0"
-            max="1"
-            step="0.000001"
-            value={assemblyProgress}
-            onChange={handleChange}
-            className="progress-slider"
-            orient={(sliderPosition === 'right' || (mobileOrientation === 'vertical' && window.innerWidth <= 768)) ? "vertical" : "horizontal"}
-            style={{ 
-              marginRight: 0, 
-              width: '100%',
-              background: (sliderPosition === 'right' || (mobileOrientation === 'vertical' && window.innerWidth <= 768))
-                ? `linear-gradient(to top, #FFB004 0%, #FFB004 ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) 100%)`
-                : `linear-gradient(to right, #FFB004 0%, #FFB004 ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) 100%)`
-            }}
-          />
-          
-          {/* Chapter Separators */}
-          {!hideAssemble && chapters.map((chapter, idx) => {
-             if (idx === 0) return null;
-             const isMobile = window.innerWidth <= 768;
-             const isVertical = sliderPosition === 'right' || (mobileOrientation === 'vertical' && isMobile);
-             const thickness = isMobile ? '2px' : '4px';
-             
-             if (isVertical) {
-                 return (
-                     <div
-                        key={`sep-${idx}`}
-                        style={{
-                            position: 'absolute',
-                            left: 0, right: 0,
-                            bottom: `${chapter.startProgress * 100}%`,
-                            height: thickness,
-                            transform: 'translateY(50%)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            pointerEvents: 'none',
-                            zIndex: 2
-                        }}
-                     />
-                 );
-             } else {
-                 return (
-                     <div
-                        key={`sep-${idx}`}
-                        style={{
-                            position: 'absolute',
-                            top: 0, bottom: 0,
-                            left: `${chapter.startProgress * 100}%`,
-                            width: thickness,
-                            transform: 'translateX(-50%)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            pointerEvents: 'none',
-                            zIndex: 2
-                        }}
-                     />
-                 );
-             }
-          })}
+            <input
+              id="progress-slider"
+              type="range"
+              min="0"
+              max="1"
+              step="0.000001"
+              value={assemblyProgress}
+              onChange={handleChange}
+              className="progress-slider"
+              orient={sliderPosition === 'right' ? "vertical" : "horizontal"}
+              style={{ 
+                marginRight: 0, 
+                width: '100%',
+                background: sliderPosition === 'right'
+                  ? `linear-gradient(to top, #FFB004 0%, #FFB004 ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) 100%)`
+                  : `linear-gradient(to right, #FFB004 0%, #FFB004 ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) ${assemblyProgress * 100}%, rgba(255, 255, 255, 0.3) 100%)`
+              }}
+            />
+            
+            {/* Chapter Separators */}
+            {chapters.map((chapter, idx) => {
+              if (idx === 0) return null;
+              const isMobile = window.innerWidth <= 768;
+              const isVertical = sliderPosition === 'right';
+              const thickness = isMobile ? '2px' : '4px';
+              
+              if (isVertical) {
+                return (
+                  <div
+                    key={`sep-${idx}`}
+                    style={{
+                      position: 'absolute',
+                      left: 0, right: 0,
+                      bottom: `${chapter.startProgress * 100}%`,
+                      height: thickness,
+                      transform: 'translateY(50%)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      pointerEvents: 'none',
+                      zIndex: 2
+                    }}
+                  />
+                );
+              } else {
+                return (
+                  <div
+                    key={`sep-${idx}`}
+                    style={{
+                      position: 'absolute',
+                      top: 0, bottom: 0,
+                      left: `${chapter.startProgress * 100}%`,
+                      width: thickness,
+                      transform: 'translateX(-50%)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      pointerEvents: 'none',
+                      zIndex: 2
+                    }}
+                  />
+                );
+              }
+            })}
 
-          {/* Hover Highlight */}
-          {hoveredCheckpoint && (
+            {/* Hover Highlight */}
+            {hoveredCheckpoint && (
               (() => {
-                  const isVertical = sliderPosition === 'right' || (mobileOrientation === 'vertical' && window.innerWidth <= 768);
-                  const start = hoveredCheckpoint.startProgress * 100;
-                  const end = hoveredCheckpoint.endProgress * 100;
-                  const size = end - start;
-                  
-                  if (isVertical) {
-                      return (
-                          <div style={{
-                              position: 'absolute',
-                              left: 0, right: 0,
-                              bottom: `${start}%`,
-                              height: `${size}%`,
-                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                              pointerEvents: 'none',
-                              zIndex: 1
-                          }} />
-                      );
-                  } else {
-                      return (
-                          <div style={{
-                              position: 'absolute',
-                              top: 0, bottom: 0,
-                              left: `${start}%`,
-                              width: `${size}%`,
-                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                              pointerEvents: 'none',
-                              zIndex: 1
-                          }} />
-                      );
-                  }
+                const isVertical = sliderPosition === 'right';
+                const start = hoveredCheckpoint.startProgress * 100;
+                const end = hoveredCheckpoint.endProgress * 100;
+                const size = end - start;
+                
+                if (isVertical) {
+                  return (
+                    <div style={{
+                      position: 'absolute',
+                      left: 0, right: 0,
+                      bottom: `${start}%`,
+                      height: `${size}%`,
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      pointerEvents: 'none',
+                      zIndex: 1
+                    }} />
+                  );
+                } else {
+                  return (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0, bottom: 0,
+                      left: `${start}%`,
+                      width: `${size}%`,
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      pointerEvents: 'none',
+                      zIndex: 1
+                    }} />
+                  );
+                }
               })()
+            )}
+          </div>
+
+          {/* Tooltip */}
+          {hoveredCheckpoint && (
+            <div
+              className="checkpoint-tooltip"
+              style={{
+                position: 'fixed',
+                left: `${tooltipPosition.x}px`,
+                top: `${tooltipPosition.y - 40}px`,
+                transform: 'none',
+                background: 'rgba(0, 0, 0, 0.85)',
+                color: 'white',
+                padding: '6px 10px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+                zIndex: 10000,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              }}
+            >
+              <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
+                Step {hoveredCheckpoint.stepNumber}/{hoveredCheckpoint.totalSteps}
+              </div>
+              <div style={{ fontSize: '11px', color: '#FFB004' }}>
+                {getAssemblyInstruction(hoveredCheckpoint.partId)}
+              </div>
+            </div>
+          )}
+
+          {/* RIGHT SIDE: Simple mode = Assemble text, Advanced mode = percentage */}
+          {advancedPlayerMode ? (
+            <div className="slider-value">{Math.round(assemblyProgress * 100)}%</div>
+          ) : (
+            <div 
+              className="slider-action-label"
+              onClick={isPlaying && playDirection === 1 ? handleSimplePause : handleAssemble}
+              style={{ cursor: 'pointer' }}
+            >
+              {isPlaying && playDirection === 1 ? 'Pause' : 'Assemble'}
+            </div>
           )}
         </div>
-
-        {/* Tooltip */}
-        {hoveredCheckpoint && (
-          <div
-            className="checkpoint-tooltip"
-            style={{
-              position: 'fixed',
-              left: mobileOrientation === 'vertical' && window.innerWidth <= 768 ? `${tooltipPosition.x}px` : `${tooltipPosition.x}px`,
-              top: mobileOrientation === 'vertical' && window.innerWidth <= 768 ? `${tooltipPosition.y - 20}px` : `${tooltipPosition.y - 40}px`,
-              transform: mobileOrientation === 'vertical' && window.innerWidth <= 768 ? 'translateY(-50%)' : 'none',
-              background: 'rgba(0, 0, 0, 0.85)',
-              color: 'white',
-              padding: '6px 10px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-              zIndex: 10000,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-            }}
-          >
-            <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
-              Step {hoveredCheckpoint.stepNumber}/{hoveredCheckpoint.totalSteps}
-            </div>
-            <div style={{ fontSize: '11px', color: '#FFB004' }}>
-              {getAssemblyInstruction(hoveredCheckpoint.partId)}
-            </div>
-          </div>
-        )}
-
-        {hideAssemble ? (
-          <div className="slider-value hide-on-mobile">Assemble</div>
-        ) : (
-          <div className="slider-value hide-on-mobile">{Math.round(assemblyProgress * 100)}%</div>
-        )}
       </div>
-    </div>
-    
-    {/* Separate playback controls below vertical slider (mobile only) */}
-    {!hideAssemble && mobileOrientation === 'vertical' && window.innerWidth <= 768 && (
-      <div className="mobile-vertical-controls">
-        <button
-          onClick={handlePrev}
-          className="playback-button"
-          title="Previous checkpoint"
-        >
-          <MdSkipPrevious />
-        </button>
-        
-        {!isPlaying ? (
-          <button
-            onClick={handlePlay}
-            className="playback-button"
-            title="Play"
-          >
-            <MdPlayArrow />
-          </button>
-        ) : (
-          <button
-            onClick={handlePause}
-            className="playback-button"
-            title="Pause"
-          >
-            <MdPause />
-          </button>
-        )}
-        
-        <button
-          onClick={handleCycleSpeed}
-          className="playback-button speed-button"
-          title="Cycle playback speed"
-        >
-          ×{playSpeed}
-        </button>
-        
-        <button
-          onClick={handleNext}
-          className="playback-button"
-          title="Next checkpoint"
-        >
-          <MdSkipNext />
-        </button>
-      </div>
-    )}
+      
     </>
   );
 }

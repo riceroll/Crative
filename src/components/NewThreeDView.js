@@ -12,6 +12,7 @@ import { CameraProvider, useCameraContext } from '../store/CameraContext';
 import { useSimpleSceneGraph } from '../hooks/useSceneGraph';
 import SceneRenderer, { SceneGraphDebugger, ScenePerformanceMonitor } from './SceneRenderer';
 import CameraController from './CameraController';
+import AdaptiveZoom from './AdaptiveZoom';
 import { getCameraParameters, precomputeCameraTargetsFromAnimation } from '../utils/animationEngine';
 import { cubeColor } from '../configs/globalConfigs';
 import { getUrlConfig } from '../utils/urlConfig';
@@ -267,6 +268,14 @@ function ThreeDViewContent({ enableDebug, showPerformanceStats, hideStepHUD }) {
         
         {/* Camera controller - manages automatic camera movement */}
         <CameraController enabled={autoCameraEnabled} distanceFactor={cameraDistanceFactor} />
+        
+        {/* Adaptive zoom - computes optimal camera distance for any screen size */}
+        <AdaptiveZoom 
+          enabled={!autoCameraEnabled} 
+          fillFraction={0.65} 
+          transitionDuration={0.8} 
+          deps={[selectedCandidate?.id, cameraDistanceFactor, innerDims.width, innerDims.height, innerDims.depth]}
+        />
         
         {/* Camera controls - manual controls, works best when auto-camera is disabled */}
         <OrbitControls

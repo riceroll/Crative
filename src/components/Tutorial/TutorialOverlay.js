@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { tutorialSteps, tutorialDefaults } from './tutorialConfig';
 import '../../styles/tutorial.css';
 
@@ -9,6 +9,7 @@ export default function TutorialOverlay() {
   const [targetRect, setTargetRect] = useState(null);
   const [popupStyle, setPopupStyle] = useState({});
   const [arrowStyle, setArrowStyle] = useState({});
+  const popupRef = useRef(null);
 
   // Check localStorage on mount
   useEffect(() => {
@@ -30,44 +31,47 @@ export default function TutorialOverlay() {
       setTargetRect(rect);
 
       // Get settings from config
-      const { popupWidth: desktopWidth, popupWidthMobile, popupHeight, margin, mobileBreakpoint } = tutorialDefaults;
+      const { popupWidth: desktopWidth, popupWidthMobile, popupHeight: defaultHeight, margin, mobileBreakpoint } = tutorialDefaults;
       const isMobile = window.innerWidth < mobileBreakpoint;
       
       // Get position config for current device
       const positionConfig = isMobile ? step.mobile : step.desktop;
       const popupWidth = isMobile ? Math.min(popupWidthMobile, window.innerWidth - 40) : desktopWidth;
+      const actualPopupHeight = popupRef.current ? popupRef.current.offsetHeight : defaultHeight;
       
       let effectivePosition = positionConfig.position;
       const centerOnScreen = isMobile && positionConfig.centerOnScreen;
       const arrowPositionConfig = positionConfig.arrowPosition;
 
       // Auto-adjust position if not enough room
-      if (effectivePosition === 'top' && rect.top < popupHeight + margin) {
+      if (effectivePosition === 'top' && rect.top < actualPopupHeight + margin) {
         effectivePosition = 'bottom';
-      } else if (effectivePosition === 'bottom' && rect.bottom + popupHeight + margin > window.innerHeight) {
+      } else if (effectivePosition === 'bottom' && rect.bottom + actualPopupHeight + margin > window.innerHeight) {
         effectivePosition = 'top';
       }
 
       let top, left, arrowTop, arrowLeft;
 
       if (effectivePosition === 'right') {
-        top = rect.top + (rect.height / 2) - (popupHeight / 2);
+        top = rect.top + (rect.height / 2) - (actualPopupHeight / 2);
         left = rect.right + margin;
-        arrowTop = arrowPositionConfig;
+        
+        if (top < 10) top = 10;
+        if (top + actualPopupHeight > window.innerHeight) top = window.innerHeight - actualPopupHeight - 10;
+        
+        arrowTop = arrowPositionConfig === 'auto' ? `${Math.max(20, Math.min(actualPopupHeight - 20, rect.top + (rect.height / 2) - top))}px` : arrowPositionConfig;
         arrowLeft = '-6px';
-        
-        if (top < 10) top = 10;
-        if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight - 10;
       } else if (effectivePosition === 'left') {
-        top = rect.top + (rect.height / 2) - (popupHeight / 2);
+        top = rect.top + (rect.height / 2) - (actualPopupHeight / 2);
         left = rect.left - popupWidth - margin;
-        arrowTop = arrowPositionConfig;
-        arrowLeft = 'calc(100% - 6px)';
         
         if (top < 10) top = 10;
-        if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight - 10;
+        if (top + actualPopupHeight > window.innerHeight) top = window.innerHeight - actualPopupHeight - 10;
+        
+        arrowTop = arrowPositionConfig === 'auto' ? `${Math.max(20, Math.min(actualPopupHeight - 20, rect.top + (rect.height / 2) - top))}px` : arrowPositionConfig;
+        arrowLeft = 'calc(100% - 6px)';
       } else if (effectivePosition === 'top') {
-        top = rect.top - popupHeight - margin;
+        top = rect.top - actualPopupHeight - margin;
         left = centerOnScreen 
           ? (window.innerWidth - popupWidth) / 2 
           : rect.left + (rect.width / 2) - (popupWidth / 2);
@@ -106,22 +110,41 @@ export default function TutorialOverlay() {
         if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - 10;
       }
 
+      let marginTop = '0';
+      let marginLeft = '0';
+
+      if (effectivePosition === 'top') {
+        marginTop = '-6px';
+        marginLeft = '-6px';
+      } else if (effectivePosition === 'bottom') {
+        marginTop = '0';
+        marginLeft = '-6px';
+      } else if (effectivePosition === 'left' || effectivePosition === 'right') {
+        marginTop = '-6px';
+        marginLeft = '0';
+      }
+
       setPopupStyle({ top, left, width: popupWidth });
       setArrowStyle({ 
         top: arrowTop, 
         left: arrowLeft, 
-        marginTop: effectivePosition === 'top' ? '-6px' : '0',
-        marginLeft: arrowPositionConfig === 'auto' ? '-6px' : '0'
+        marginTop,
+        marginLeft
       });
     }
   }, [currentStepIndex, isVisible]);
 
   useEffect(() => {
-    updatePosition();
+    // Use a small timeout to ensure DOM has updated with new content before measuring height
+    const timer = setTimeout(() => {
+      updatePosition();
+    }, 10);
+    
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
     
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
@@ -171,7 +194,7 @@ export default function TutorialOverlay() {
         />
       )}
 
-      <div className="tutorial-popup" style={popupStyle}>
+      <div className="tutorial-popup" style={popupStyle} ref={popupRef}>
         <div className="tutorial-arrow" style={arrowStyle} />
         
         <div className="tutorial-header">

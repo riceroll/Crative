@@ -16,7 +16,7 @@ export const screwColor = '#cdcbcb'; // Color for screws
 
 export const stickColor = '#c7c7c7'; // Color for sticks
 
-export const pieceColor = '#bcbcbc'; // Color for pieces
+export const pieceColor = '#FFD700'; // Color for pieces (same as cubes)
 
 export const assemblyDisplacement = 50;
 

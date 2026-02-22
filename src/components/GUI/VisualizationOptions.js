@@ -7,7 +7,9 @@ export default function VisualizationOptions() {
     visualizeBoardTypes, 
     toggleVisualizeBoardTypes,
     autoCameraEnabled,
-    toggleAutoCameraEnabled
+    toggleAutoCameraEnabled,
+    advancedPlayerMode,
+    toggleAdvancedPlayerMode
   } = useContext(CrateContext);
 
   return (
@@ -35,6 +37,18 @@ export default function VisualizationOptions() {
             <span className="slider"></span>
           </label>
           <span className="toggle-label">Auto Camera</span>
+        </div>
+
+        <div className="toggle-container">
+          <label className="toggle-switch">
+            <input 
+              type="checkbox" 
+              checked={advancedPlayerMode} 
+              onChange={toggleAdvancedPlayerMode} 
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="toggle-label">Advanced Player</span>
         </div>
       </div>
     </div>

@@ -681,10 +681,13 @@
   height: 6px;
   margin-right: 10px;
   -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
   background: #ddd;
   border-radius: 3px;
   outline: none;
+  accent-color: #FFB004;
+  color: #FFB004;
 }
 
 .progress-slider::-webkit-slider-thumb {
@@ -693,7 +696,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #4a80f5;
+  background: #FFB004;
   cursor: pointer;
   position: relative;
   z-index: 10;
@@ -703,7 +706,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #4a80f5;
+  background: #FFB004;
   cursor: pointer;
   border: none;
   position: relative;
@@ -953,7 +956,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #4a80f5;
+  background: #FFB004;
   cursor: pointer;
 }
 
@@ -961,7 +964,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #4a80f5;
+  background: #FFB004;
   cursor: pointer;
   border: none;
 }
@@ -1326,11 +1329,11 @@
     bottom: 10px;
   }
   
-  /* Mobile vertical slider on left side */
+  /* Mobile vertical slider on right side */
   .fullscreen-slider.mobile-vertical {
     /* position: fixed !important; */
-    left: 10px !important;
-    right: auto !important;
+    left: auto !important;
+    right: 10px !important;
     top: 56px !important;
     bottom: auto !important;
     /* transform: translateY(-50%) !important; */
@@ -1813,5 +1816,61 @@
   
   .help-button:hover::after {
     right: 28px;
+  }
+}
+
+/* ===== Slider Action Labels (Disassemble / Assemble) ===== */
+.slider-action-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Lato', 'Roboto', 'Arial', sans-serif;
+  white-space: nowrap;
+  user-select: none;
+  padding: 0 8px;
+  border-radius: 4px;
+  transition: color 0.2s ease, background 0.2s ease;
+  width: 90px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  box-sizing: border-box;
+  flex: 0 0 90px;
+  overflow: hidden;
+}
+
+.slider-action-label:hover {
+  color: #FFB004;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Mobile compact styles for fullscreen slider */
+@media (max-width: 600px) {
+  .fullscreen-slider {
+    left: 8px;
+    right: 8px;
+    bottom: 10px;
+    padding: 4px 8px !important;
+    gap: 6px;
+  }
+
+  .fullscreen-slider .slider-container {
+    gap: 4px;
+  }
+
+  .slider-action-label {
+    font-size: 11px;
+    width: 70px;
+    flex: 0 0 70px;
+    padding: 0 4px;
+  }
+
+  .fullscreen-slider .playback-controls {
+    gap: 0px;
+  }
+
+  .fullscreen-slider .slider-value {
+    font-size: 11px;
+    min-width: 32px;
   }
 }

@@ -45,6 +45,7 @@ export function CrateProvider({ children }) {
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);
   const [visualizeBoardTypes, setVisualizeBoardTypes] = useState(false);
   const [autoCameraEnabled, setAutoCameraEnabled] = useState(false); // Off by default
+  const [advancedPlayerMode, setAdvancedPlayerMode] = useState(false); // Simple player by default
   const [useInch, setUseInch] = useState(true);
   const [assemblyProgress, setAssemblyProgress] = useState(1.0);
   const [focusPosition, setFocusPosition] = useState([0, 0, 0]);
@@ -125,6 +126,11 @@ export function CrateProvider({ children }) {
     setAutoCameraEnabled(prev => !prev);
   };
 
+  // Function to toggle advanced player mode
+  const toggleAdvancedPlayerMode = () => {
+    setAdvancedPlayerMode(prev => !prev);
+  };
+
   const toggleUseInch = () => {
     setUseInch(prev => !prev);
 
@@ -151,6 +157,8 @@ export function CrateProvider({ children }) {
         toggleVisualizeBoardTypes, // <-- Expose toggle function
         autoCameraEnabled, // <-- Expose auto camera state
         toggleAutoCameraEnabled, // <-- Expose auto camera toggle function
+        advancedPlayerMode, // <-- Expose advanced player mode state
+        toggleAdvancedPlayerMode, // <-- Expose advanced player mode toggle
         useInch,
         toggleUseInch, 
         assemblyProgress,
