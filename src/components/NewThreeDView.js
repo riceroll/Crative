@@ -397,6 +397,18 @@ function DebugOverlay({ sceneGraph, assemblyProgress, activePart, currentStepInf
     };
   }, [sceneGraph]);
 
+  const isInIframe = React.useMemo(() => {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true; // If we can't access window.top due to CORS, we're definitely in a cross-origin iframe
+    }
+  }, []);
+
+  if (isInIframe) {
+    return null;
+  }
+
   return (
     <a href="https://crative.com" target="_blank" rel="noopener noreferrer" style={{
       position: 'absolute',
@@ -408,7 +420,7 @@ function DebugOverlay({ sceneGraph, assemblyProgress, activePart, currentStepInf
       cursor: 'pointer'
     }}>
       <img 
-        src="/images/logo_black.png" 
+        src="./images/logo_black.png" 
         alt="Crative Logo" 
         style={{ height: '36px', width: 'auto', display: 'block', opacity: 0.85, transition: 'opacity 0.2s' }}
         onMouseOver={(e) => e.currentTarget.style.opacity = 1}
