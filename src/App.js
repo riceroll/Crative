@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 import LogoCard from './components/GUI/LogoCard'
 import InputForm from './components/GUI/InputForm'
 import OptionsList from './components/GUI/OptionsList'

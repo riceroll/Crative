@@ -398,58 +398,23 @@ function DebugOverlay({ sceneGraph, assemblyProgress, activePart, currentStepInf
   }, [sceneGraph]);
 
   return (
-    <div style={{
+    <a href="https://crative.com" target="_blank" rel="noopener noreferrer" style={{
       position: 'absolute',
-      top: '10px',
-      left: '10px',
-      background: 'rgba(0, 0, 0, 0.46)',
-      color: 'white',
-      padding: '10px',
-      borderRadius: '5px',
-      fontSize: '12px',
-      fontFamily: "'Lato', 'Roboto', 'Arial', sans-serif",
+      top: '12px',
+      left: '12px',
       zIndex: 1000,
-      minWidth: '250px'
+      textDecoration: 'none',
+      outline: 'none',
+      cursor: 'pointer'
     }}>
-      {/* <h4 style={{ margin: '0 0 10px 0', color: '#4CAF50' }}>Scene Graph Debug</h4>
-      <div>Progress: {(assemblyProgress * 100).toFixed(1)}%</div>
-      <div>Total Parts: {sceneInfo.totalParts}</div>
-      <div>Visible Parts: {sceneInfo.visibleParts}</div>
-      <div>Active Parts: {sceneInfo.activeParts}</div> */}
-      
-      {/* {activePart && (
-        <div style={{ marginTop: '10px', borderTop: '1px solid #555', paddingTop: '10px' }}>
-          <h5 style={{ margin: '0 0 5px 0', color: '#FF9800' }}>Camera Focus</h5>
-          <div style={{ fontSize: '10px' }}>
-            <div>Part: {activePart.partId.substring(0, 30)}{activePart.partId.length > 30 ? '...' : ''}</div>
-            <div>Motion: {activePart.motion.keyframe_id.substring(0, 25)}{activePart.motion.keyframe_id.length > 25 ? '...' : ''}</div>
-            <div>Progress: {(activePart.progress * 100).toFixed(1)}%</div>
-          </div>
-        </div>
-      )} */}
-      
-      <div style={{ marginTop: '0px', paddingTop: '0px' }}>
-        {/* <h5 style={{ margin: '0 0 5px 0', color: '#2196F3' }}>Assembly Instruction</h5> */}
-        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-          <span style={{ color: cubeColor }}>Assembling: </span>
-          {activePart && (
-            <span style={{ color: '#FFF' }}>
-              {getAssemblyInstruction(activePart.partId).replace('Assembling: ', '')}
-            </span>
-          )}
-          {currentStepInfo && (
-            <span style={{ color: '#ccc', fontSize: '12px', marginLeft: '8px' }}>
-              ({currentStepInfo.stepNumber}/{currentStepInfo.totalSteps})
-            </span>
-          )}
-        </div>
-      </div>
-      
-      {/* <div style={{ marginTop: '10px', fontSize: '10px', color: '#ccc' }}>
-        <div>Press F12 to open console for detailed logs</div>
-        <div>Use browser dev tools to inspect scene graph</div>
-      </div> */}
-    </div>
+      <img 
+        src="/images/logo_black.png" 
+        alt="Crative Logo" 
+        style={{ height: '36px', width: 'auto', display: 'block', opacity: 0.85, transition: 'opacity 0.2s' }}
+        onMouseOver={(e) => e.currentTarget.style.opacity = 1}
+        onMouseOut={(e) => e.currentTarget.style.opacity = 0.85}
+      />
+    </a>
   );
 }
 
