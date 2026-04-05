@@ -18,6 +18,35 @@ import TutorialOverlay from './components/Tutorial/TutorialOverlay'
 import './App.css'
 
 export default function App() {
+  // If embedded in an iframe on crative.com, attempt to steal parent URL parameters
+  // from the referrer on load, because Shopify deletes injected script tags.
+  useEffect(() => {
+    try {
+      if (window.self !== window.top && document.referrer) {
+        const parentUrl = new URL(document.referrer);
+        // Check if parent has parameters (like ?width=30&height=20)
+        // And if we ourselves don't have them yet
+        if (parentUrl.search && parentUrl.search.length > 1) {
+          const myCurrentSearch = window.location.search;
+          const myTargetSearch = parentUrl.search;
+          
+          // To prevent infinite reloading loops, only reload if our params don't match the parent's
+          if (myCurrentSearch !== myTargetSearch) {
+              // Extract the new parameters and append our default like useN8AO if needed
+              // Let's simply redirect our own frame to have those same parameters
+              const newSelfParams = new URLSearchParams(myTargetSearch);
+              // preserve existing if you want, but sticking to parent is safer
+              
+              const newUrl = window.location.pathname + "?" + newSelfParams.toString();
+              window.location.replace(newUrl); 
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Cross-origin or referrer block when checking parent params:", e);
+    }
+  }, []);
+
   // Get URL parameters from centralized config
   const urlConfig = getUrlConfig();
   const { hideUI, debugMode, hideStepHUD, hideAssemble } = urlConfig;
