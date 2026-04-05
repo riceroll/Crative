@@ -42,5 +42,7 @@ export function getUrlConfig() {
     width: getNumberParam('width', defaultSettings.dimensions.width),
     height: getNumberParam('height', defaultSettings.dimensions.height),
     depth: getNumberParam('depth', defaultSettings.dimensions.depth),
+    unit: getStringParam('unit', defaultSettings.dimensions.unit),
+    designIndex: getNumberParam('designIndex', defaultSettings.dimensions.designIndex),
   };
 }

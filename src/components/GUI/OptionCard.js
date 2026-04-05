@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { CrateContext } from '../../store/CrateContext';
+import { convertToDisplay } from '../../utils/utils';
 
 export default function OptionCard({ option, selected, onSelect }) {
+  const { useInch } = useContext(CrateContext);
+
   return (
     <div
       className="option-card"
@@ -25,7 +29,7 @@ export default function OptionCard({ option, selected, onSelect }) {
           </div>
         ))}
         </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', lineHeight: '1.6' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '4px 12px', lineHeight: '1.6' }}>
         {/* <div className='option-label'>Dead Space (m³):</div> */}
         {/* <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
           {(option.internalVolume - option.innerVolume).toFixed(2)}
@@ -40,6 +44,11 @@ export default function OptionCard({ option, selected, onSelect }) {
         <div className='option-label'>Board Count:</div>
         <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
           {option.numBoards}</div>
+        <div className='option-label'>Outer Dims:</div>
+        <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
+          {convertToDisplay(option.outerDims.width, useInch)} x {convertToDisplay(option.outerDims.height, useInch)} x{' '}
+          {convertToDisplay(option.outerDims.depth, useInch)}
+        </div>
       </div>
     </div>
   );

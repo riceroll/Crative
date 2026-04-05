@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { CrateContext } from '../../store/CrateContext';
+import ShareLinkButton from './ShareLinkButton';
 import '../../styles/ui.css';
 
 export default function VisualizationOptions() {
@@ -14,6 +15,10 @@ export default function VisualizationOptions() {
 
   return (
     <div className="card" id="tutorial-toggles-panel">
+      <div className="card-title" style={{ marginBottom: '12px' }}>
+        <span>Options & Sharing</span>
+      </div>
+      
       <div className="visualization-options-mobile">
         <div className="toggle-container">
           <label className="toggle-switch">
@@ -49,6 +54,11 @@ export default function VisualizationOptions() {
             <span className="slider"></span>
           </label>
           <span className="toggle-label">Advanced Player</span>
+        </div>
+
+        {/* Share Button acting as the 4th item */}
+        <div className="toggle-container" style={{ marginTop: '8px', width: '100%' }}>
+          <ShareLinkButton />
         </div>
       </div>
     </div>

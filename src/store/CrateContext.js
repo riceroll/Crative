@@ -46,7 +46,10 @@ export function CrateProvider({ children }) {
   const [visualizeBoardTypes, setVisualizeBoardTypes] = useState(false);
   const [autoCameraEnabled, setAutoCameraEnabled] = useState(false); // Off by default
   const [advancedPlayerMode, setAdvancedPlayerMode] = useState(false); // Simple player by default
-  const [useInch, setUseInch] = useState(true);
+  const [useInch, setUseInch] = useState(() => {
+    const config = getUrlConfig();
+    return config.unit !== 'cm';
+  });
   const [assemblyProgress, setAssemblyProgress] = useState(1.0);
   const [focusPosition, setFocusPosition] = useState([0, 0, 0]);
   const [bgColor, setBgColor] = useState(getInitialBgColor());
@@ -76,6 +79,8 @@ export function CrateProvider({ children }) {
     }));
   };
 
+  const [hasInitializedDesign, setHasInitializedDesign] = useState(false);
+
   // Recompute candidate crates whenever innerDims or boardTypesToExclude change
   useEffect(() => {
     // Calculate new candidate crates
@@ -87,8 +92,23 @@ export function CrateProvider({ children }) {
     // Select the candidate with minimum volume (rankVolume === 1) as default
     // If no selection exists or current selection is not in new candidates
     if ((selectedCandidateId === null) || !candidates.some(c => c.id === selectedCandidateId)) {
-      const minVolumeCandidate = candidates.find(c => c.rankVolume === 1);
-      setSelectedCandidateId(minVolumeCandidate?.id || candidates[0]?.id);
+      let defaultId = null;
+      
+      if (!hasInitializedDesign) {
+        const config = getUrlConfig();
+        if (config.designIndex !== undefined && config.designIndex >= 0 && config.designIndex < candidates.length) {
+          defaultId = candidates[config.designIndex].id;
+        } else {
+          const minVolumeCandidate = candidates.find(c => c.rankVolume === 1);
+          defaultId = minVolumeCandidate?.id || candidates[0]?.id;
+        }
+        setHasInitializedDesign(true);
+      } else {
+        const minVolumeCandidate = candidates.find(c => c.rankVolume === 1);
+        defaultId = minVolumeCandidate?.id || candidates[0]?.id;
+      }
+      
+      setSelectedCandidateId(defaultId);
     }
 
     // Turn off auto camera when dimensions change
