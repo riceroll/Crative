@@ -20,8 +20,9 @@ export default function ShareLinkButton() {
       params.set('designIndex', designIndex);
     }
 
-    // Construct full URL
-    const baseUrl = window.location.origin + window.location.pathname;
+    // Construct full URL with forced base URL
+    const baseUrl = 'https://crative.com/pages/build/';
+
     const fullUrl = `${baseUrl}?${params.toString()}`;
 
     const fallbackCopy = (text) => {
