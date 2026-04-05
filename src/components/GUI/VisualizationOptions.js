@@ -57,7 +57,7 @@ export default function VisualizationOptions() {
         </div>
 
         {/* Share Button acting as the 4th item */}
-        <div className="toggle-container" style={{ marginTop: '8px', width: '100%' }}>
+        <div className="toggle-container">
           <ShareLinkButton />
         </div>
       </div>

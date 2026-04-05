@@ -1192,19 +1192,18 @@
     box-sizing: border-box;
   }
 
-  /* Visualization options side by side */
+  /* Visualization options side by side, 2x2 grid */
   .visualization-options-mobile {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
   }
 
   .visualization-options-mobile .toggle-container {
     margin: 0;
     flex-direction: row;
     align-items: center;
-    gap: 0;
+    gap: 6px;
     flex: 1;
   }
 
@@ -1632,6 +1631,7 @@
     flex-direction: row;
     align-items: center;
     margin-bottom: 12px;
+    margin-top: 0;
   }
 
   .visualization-options-mobile .toggle-container:last-child {
