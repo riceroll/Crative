@@ -24,13 +24,47 @@ export default function ShareLinkButton() {
     const baseUrl = window.location.origin + window.location.pathname;
     const fullUrl = `${baseUrl}?${params.toString()}`;
 
+    const fallbackCopy = (text) => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // Avoid scrolling to bottom
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } else {
+          console.error('Fallback: Copying text command was unsuccessful');
+        }
+      } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+      }
+
+      document.body.removeChild(textArea);
+    };
+
     // Copy to clipboard
-    navigator.clipboard.writeText(fullUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(err => {
-      console.error('Failed to copy: ', err);
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(err => {
+        console.warn('Clipboard API failed, using fallback.', err);
+        fallbackCopy(fullUrl);
+      });
+    } else {
+      fallbackCopy(fullUrl);
+    }
   };
 
   return (
