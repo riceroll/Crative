@@ -14,7 +14,12 @@ export default function TutorialOverlay() {
   // Check localStorage on mount
   useEffect(() => {
     const completed = localStorage.getItem('tutorial_completed');
-    if (!completed) {
+    
+    // Check if URL has build parameters (indicates it's a shared link)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isSharedLink = urlParams.has('width') || urlParams.has('depth') || urlParams.has('height');
+    
+    if (!completed && !isSharedLink) {
       // Small delay to ensure UI is rendered
       setTimeout(() => setIsVisible(true), 1000);
     }
