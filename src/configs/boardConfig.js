@@ -13,27 +13,27 @@ export const thickness = 1.5;
 export const boardTypes = {
     // Naming convention example: 'dimAxDimB' (assuming thickness is standard)
     // Adjust names and properties based on your actual board generation logic
-    'board_40x40': { width: sizeLarge, height: sizeLarge, thickness: thickness, price: 65.00 ,
+    'board_40x40': { width: sizeLarge, height: sizeLarge, thickness: thickness, price: 65.00, weight: 13.7,
         defaultColor: defaultColor,
         highlightColor: colors[0]
     },
-    'board_40x24': { width: sizeLarge, height: sizeMedium, thickness: thickness, price: 38.0, 
+    'board_40x24': { width: sizeLarge, height: sizeMedium, thickness: thickness, price: 38.0, weight: 8.22,
         defaultColor: defaultColor,
         highlightColor: colors[1]
     },
-    'board_40x5': { width: sizeLarge, height: sizeSmall, thickness: thickness, price: 35.00, 
+    'board_40x5': { width: sizeLarge, height: sizeSmall, thickness: thickness, price: 35.00, weight: 3.5,
         defaultColor: defaultColor,
         highlightColor: colors[2]
      },
-    'board_24x24': { width: sizeMedium, height: sizeMedium, thickness: thickness, price: 22.00,
+    'board_24x24': { width: sizeMedium, height: sizeMedium, thickness: thickness, price: 22.00, weight: 4.93,
         defaultColor: defaultColor,
         highlightColor: colors[3]
      },
-    'board_24x5': { width: sizeMedium, height: sizeSmall, thickness: thickness, price: 12.00,
+    'board_24x5': { width: sizeMedium, height: sizeSmall, thickness: thickness, price: 12.00, weight: 2.1,
         defaultColor: defaultColor,
         highlightColor: colors[4]
      },
-    'board_5x5': { width: sizeSmall, height: sizeSmall, thickness: thickness, price: 5.50,
+    'board_5x5': { width: sizeSmall, height: sizeSmall, thickness: thickness, price: 5.50, weight: 0.44,
         defaultColor: defaultColor,
         highlightColor: colors[5]
      },
@@ -41,16 +41,25 @@ export const boardTypes = {
 };
 
 export const cubePrice = 5.00;
+export const cubeWeight = 0.1;
 
 export const screwPrice = 0.15;
+export const screwWeight = 0.0;
 
 export const stickPrice = 0.2;
+export const stickWeight = 0.1;
 
 export const piecePrice = 10.00;
+export const pieceWeight = 0.1;
 
 // Helper function to get board price (returns 0 if type not found)
 export function getBoardPrice(boardType) {
     return boardTypes[boardType]?.price || 0;
+}
+
+// Helper function to get board weight in lbs (returns 0 if type not found)
+export function getBoardWeight(boardType) {
+    return boardTypes[boardType]?.weight || 0;
 }
 
 // Helper function to get board dimensions (returns null if type not found)

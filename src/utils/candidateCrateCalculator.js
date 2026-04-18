@@ -3,7 +3,7 @@ import { calculateBoardSizes } from './boardSizesCalculator';
 
 
 // Import config and helpers
-import { getBoardPrice, thickness, gap, boardTypes } from '../configs/boardConfig';
+import { getBoardPrice, getBoardWeight, thickness, gap, boardTypes, cubeWeight, pieceWeight, stickWeight } from '../configs/boardConfig';
 
 
 // Helper to calculate total size (can likely be removed if not needed outside boardSizesCalculator)
@@ -30,6 +30,7 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
         // 2b. Calculate metrics based on faceLayouts and boardSizes
         let boardCount = 0;
         let totalPrice = 0;
+        let totalWeight = 0;
         const boardTypeCounts = {}; // <-- Initialize object for board type counts
 
         Object.values(faceLayouts).forEach(face => {
@@ -37,6 +38,7 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
                 boardCount += face.boards.length;
                 face.boards.forEach(board => {
                     totalPrice += getBoardPrice(board.type); // Use helper from config
+                    totalWeight += getBoardWeight(board.type); // Add board weight
 
                     const boardType = board.type;
                     boardTypeCounts[boardType] = (boardTypeCounts[boardType] || 0) + 1;
@@ -49,11 +51,13 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
         const cornerCubeCount = cubeLayouts?.cornerCubes?.length || 0;
         const edgeCubeCount = cubeLayouts?.edgeCubes?.length || 0;
         const totalCubeCount = cornerCubeCount + edgeCubeCount;
+        totalWeight += totalCubeCount * cubeWeight;
 
         // --- Calculate total screw count ---
         const cornerScrewCount = screwLayouts?.cornerScrews?.length || 0;
         const edgeScrewCount = screwLayouts?.edgeScrews?.length || 0;
         const totalScrewCount = cornerScrewCount + edgeScrewCount;
+        // Screws are 0 lbs based on user requirement
 
         // --- Calculate total bar count ---
         let totalBarCount = 0;
@@ -62,6 +66,7 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
                 totalBarCount += face.bars.length;
             }
         });
+        totalWeight += totalBarCount * stickWeight;
 
         // --- Calculate total piece count ---
         let totalPieceCount = 0;
@@ -70,6 +75,7 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
                 totalPieceCount += face.pieces.length;
             }
         });
+        totalWeight += totalPieceCount * pieceWeight;
 
         // --------------------------------
 
@@ -96,6 +102,7 @@ export function calculateCandidateCrates(innerDims, boardTypesToExclude) {
             screwLayouts: screwLayouts,
             numBoards: boardCount,
             totalPrice: totalPrice,
+            totalWeight: totalWeight,
             cubeCount: totalCubeCount,
             screwCount: totalScrewCount,
             pieceCount: totalPieceCount,

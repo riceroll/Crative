@@ -35,7 +35,15 @@ export default function OptionCard({ option, selected, onSelect }) {
           {(option.internalVolume - option.innerVolume).toFixed(2)}
         </div> */}
         <div className='option-label'>Total Price:</div>
-        <div style={{ textAlign: 'right', color: '#666' }}>${option.totalPrice}</div>
+        <div style={{ textAlign: 'right', color: '#666' }}>${option.totalPrice.toFixed(2)}</div>
+        
+        {option.totalWeight > 0 && (
+          <>
+            <div className='option-label'>Total Weight:</div>
+            <div style={{ textAlign: 'right', color: '#666' }}>{option.totalWeight.toFixed(1)} lbs</div>
+          </>
+        )}
+
         {/* <div className='option-label'>Inner Dims (m):</div> */}
         {/* <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
           {option.internalDims.width.toFixed(1)} x {option.internalDims.height.toFixed(1)} x{' '}
