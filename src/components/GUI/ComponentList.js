@@ -33,7 +33,7 @@ export default function ComponentList() {
       const unitPrice = getBoardPrice(type);
       const colorIndex = Object.keys(boardTypes).indexOf(type);
       const color = visualizeBoardTypes ? colors[colorIndex] : defaultColor; // Use color from config or default
-      const formattedName = type.replace('board_', '').replace('x', '\'\'x') + '\'\'';
+      const formattedName = type.replace('board_', '').replace('x', '" x ') + '"';
       components.push({ type, name: formattedName, imageName: getBoardImageName(type), count, unitPrice, totalCost: unitPrice * count, color  });
     });
   }
