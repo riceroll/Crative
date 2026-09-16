@@ -80,7 +80,7 @@ export default function App() {
           <InputForm />
           <OptionsList />
           <VisualizationOptions /> 
-          {/* <BoardTypeFilter /> */}
+          <BoardTypeFilter />
           <ComponentList />
         </div>
       )}

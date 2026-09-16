@@ -46,7 +46,8 @@ export default function BoardTypeFilter() {
   // Format board type name for display
   const formatBoardTypeName = (boardType) => {
     // Convert 'board_40x24' to '40×24'
-    return boardType.replace('board_', '').replace('x', '×');
+    const boardName = boardType.replace('board_', '').replace('x', '×');
+    return boardType === 'board_24x5' ? `${boardName} (Coming soon)` : boardName;
   };
 
   // Check if board type is required (always enabled)

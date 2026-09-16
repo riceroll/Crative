@@ -55,10 +55,8 @@ export function CrateProvider({ children }) {
   const [bgColor, setBgColor] = useState(getInitialBgColor());
   const [cameraDistanceFactor, setCameraDistanceFactor] = useState(getInitialCameraDistanceFactor());
   const [boardTypesToExclude, setBoardTypesToExclude] = useState([
-    'board_24x5',
     'board_24x24',
-    'board_40x24',
-    'board_5x5'
+    'board_40x24'
   ]);
 
   // Collapsible cards state - detect mobile on mount
