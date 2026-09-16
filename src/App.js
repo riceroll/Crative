@@ -3,7 +3,6 @@ import LogoCard from './components/GUI/LogoCard'
 import InputForm from './components/GUI/InputForm'
 import OptionsList from './components/GUI/OptionsList'
 import VisualizationOptions from './components/GUI/VisualizationOptions'
-import BoardTypeFilter from './components/GUI/BoardTypeFilter'
 import ComponentList from './components/GUI/ComponentList'
 import ProgressSlider from './components/GUI/ProgressSlider'
 import FloatingControls from './components/GUI/FloatingControls'
@@ -80,7 +79,6 @@ export default function App() {
           <InputForm />
           <OptionsList />
           <VisualizationOptions /> 
-          <BoardTypeFilter />
           <ComponentList />
         </div>
       )}

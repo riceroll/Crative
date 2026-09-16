@@ -69,48 +69,15 @@ export default function ShareLinkButton() {
   };
 
   return (
-    <>
-      <div 
-        className="toggle-switch"
-        title="Share Configuration Link"
-        onClick={handleShare}
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          cursor: 'pointer',
-          borderRadius: '34px',
-          background: copied ? 'rgba(79, 172, 254, 0.15)' : 'rgba(0,0,0,0.06)',
-          transition: 'all 0.2s'
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = copied ? 'rgba(79, 172, 254, 0.25)' : 'rgba(0,0,0,0.1)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = copied ? 'rgba(79, 172, 254, 0.15)' : 'rgba(0,0,0,0.06)';
-        }}
-      >
-        <IoLinkOutline 
-          size={19} 
-          style={{ 
-            color: copied ? 'var(--accent-color, #4facfe)' : '#555',
-            transition: 'color 0.2s'
-          }} 
-        />
-      </div>
-      <span 
-        className="toggle-label" 
-        onClick={handleShare}
-        title="Share Configuration Link"
-        style={{
-          cursor: 'pointer',
-          color: copied ? 'var(--accent-color, #4facfe)' : 'inherit',
-          transition: 'color 0.2s',
-          userSelect: 'none'
-        }}
-      >
-        {copied ? 'Link Copied!' : 'Share Link'}
-      </span>
-    </>
+    <button
+      type="button"
+      className={`share-link-button ${copied ? 'copied' : ''}`}
+      onClick={handleShare}
+      title="Share Configuration Link"
+      aria-label={copied ? 'Link copied' : 'Share link'}
+    >
+      <IoLinkOutline size={18} aria-hidden="true" />
+      <span role="status" aria-live="polite">{copied ? 'Link copied' : 'Share link'}</span>
+    </button>
   );
 }

@@ -225,7 +225,10 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      // Let focused controls handle their own keys (e.g. Space on Share link).
+      if (e.defaultPrevented || e.target instanceof Element && e.target.closest(
+        'input, textarea, select, button, a[href], summary, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="switch"], [role="checkbox"]'
+      )) {
         return;
       }
 
