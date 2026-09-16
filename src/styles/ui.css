@@ -1881,7 +1881,7 @@
   color: #1d6235;
 }
 
-.view-settings,
+.optional-boards,
 .settings-share {
   margin-top: 16px;
   padding-top: 12px;
@@ -1944,6 +1944,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .options-sharing-card *,
+  .optional-board-control,
   .settings-switch-track::before {
     transition: none;
   }

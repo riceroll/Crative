@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { CrateContext } from '../../store/CrateContext';
 import {convertToInches, convertToDisplay} from '../../utils/utils';
+import OptionalBoards from './OptionalBoards';
 
 export default function InputForm() {
   const { innerDims, setInnerDims } = useContext(CrateContext);
@@ -147,6 +148,7 @@ export default function InputForm() {
           </button>
         </div>
       </div>
+      <OptionalBoards />
     </form>
   );
 }
