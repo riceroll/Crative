@@ -44,14 +44,14 @@ export default function OptionCard({ option, selected, onSelect }) {
           </>
         )}
 
-        {/* <div className='option-label'>Inner Dims (m):</div> */}
-        {/* <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
-          {option.internalDims.width.toFixed(1)} x {option.internalDims.height.toFixed(1)} x{' '}
-          {option.internalDims.depth.toFixed(1)}
-        </div> */}
         <div className='option-label'>Board Count:</div>
         <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
           {option.numBoards}</div>
+        <div className='option-label'>Interior Dims:</div>
+        <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
+          {convertToDisplay(option.internalDims.width, useInch)} x {convertToDisplay(option.internalDims.height, useInch)} x{' '}
+          {convertToDisplay(option.internalDims.depth, useInch)}
+        </div>
         <div className='option-label'>Outer Dims:</div>
         <div className='option-value' style={{ textAlign: 'right', color: '#666' }}>
           {convertToDisplay(option.outerDims.width, useInch)} x {convertToDisplay(option.outerDims.height, useInch)} x{' '}
