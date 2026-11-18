@@ -63,11 +63,12 @@ export default function InputForm() {
       onSubmit={handleSubmit}
       id="tutorial-dimensions-panel"
     >
-      <div className='card-title' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className='card-title dimensions-heading'>
         <span>Cargo Dimensions</span>
 
         <div className="unit-selector dropdown-switch">
           <select
+            aria-label="Dimension unit"
             value={useInch ? 'inch' : 'cm'}
             onChange={(e) => {
               if ((e.target.value === 'inch' && !useInch) || (e.target.value === 'cm' && useInch)) {

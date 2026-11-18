@@ -4,7 +4,7 @@ import { CrateContext } from '../../store/CrateContext';
 import { boardTypes, cubePrice, getBoardPrice, screwPrice, stickPrice, piecePrice } from '../../configs/boardConfig';
 import '../../styles/ui.css';
 import { LuPrinter } from 'react-icons/lu';
-import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
+import CollapsiblePanel from './CollapsiblePanel';
 import { colors, defaultColor, cubeColor, screwColor, pieceColor, stickColor } from '../../configs/globalConfigs';
 
 
@@ -18,13 +18,11 @@ const getBoardImageName = (boardType) => {
 
 export default function ComponentList() {
   const { selectedCandidate, visualizeBoardTypes } = useContext(CrateContext);
-  const { collapsedCards, toggleCardCollapse } = useContext(CrateContext);
   const componentRef = useRef();
   const triggerPrint = useReactToPrint({ contentRef: componentRef, documentTitle: `Component List – ${selectedCandidate?.id}` });
   const [hoveredImg, setHoveredImg] = useState(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
-  const isCollapsed = collapsedCards.componentList;
 
   // build items
   const components = [];
@@ -61,26 +59,16 @@ export default function ComponentList() {
   const totalAllCost = components.reduce((sum, c) => sum + c.totalCost, 0);
 
   return (
-    <div className="card" id="tutorial-components-panel">
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems: 'center' }}>
-        <div 
-          className="card-title collapsible-title"
-          onClick={() => toggleCardCollapse('componentList')}
-          style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', marginBottom: 0, borderBottom: 'none' }}
-        >
-          <span>Parts List</span>
-          <span className='collapse-icon'>
-            {isCollapsed ? <IoChevronDown /> : <IoChevronUp />}
-          </span>
-        </div>
-        {components.length>0 && (
-          <div id="tutorial-print-button" onClick={triggerPrint} style={{background:'none',border:'none',cursor:'pointer',padding:'4px'}}>
-            <LuPrinter size="14px" color="#555"/>
-          </div>
-        )}
-      </div>
-
-      {!isCollapsed && (
+    <CollapsiblePanel
+      id="tutorial-components-panel"
+      title="Parts List"
+      stateKey="componentList"
+      actions={components.length > 0 && (
+        <button type="button" className="panel-action" id="tutorial-print-button" onClick={triggerPrint} aria-label="Print parts list" title="Print parts list">
+          <LuPrinter size={16} aria-hidden="true" />
+        </button>
+      )}
+    >
         <div ref={componentRef} className="printable-component-list">
           {components.length===0
             ? <p style={{padding:'10px',color:'#888'}}>
@@ -141,7 +129,6 @@ export default function ComponentList() {
               </table>
           }
         </div>
-      )}
       {hoveredImg && (
         <div
           className="hover-preview"
@@ -154,6 +141,6 @@ export default function ComponentList() {
           <img src={hoveredImg} alt="Preview" />
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 }

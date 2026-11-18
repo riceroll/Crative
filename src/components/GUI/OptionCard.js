@@ -6,23 +6,18 @@ export default function OptionCard({ option, selected, onSelect }) {
   const { useInch } = useContext(CrateContext);
 
   return (
-    <div
+    <button
+      type="button"
       className="option-card"
       onClick={onSelect}
       data-selected={selected}
+      aria-pressed={selected}
     >
-      <div style={{ marginBottom: '8px' }}>
+      <div className="design-badges">
         {option.labels.map((label, index) => (
           <div
             key={index}
-            className={`option-label-${label}`}
-            style={{
-              display: 'inline-flex',
-              margin: '0 4px',
-              marginLeft: '0',
-              padding: '2px 4px',
-              backgroundColor: 'rgb(255, 176, 4, 0.6)'
-            }}
+            className={`design-badge option-label-${label}`}
           >
             {label === 'Balanced' ? label : 'Min '}
             {label === 'Balanced' ? '' : label}
@@ -58,6 +53,6 @@ export default function OptionCard({ option, selected, onSelect }) {
           {convertToDisplay(option.outerDims.depth, useInch)}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

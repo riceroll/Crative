@@ -1,5 +1,7 @@
 import React, { useContext, useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { MdSkipPrevious, MdSkipNext, MdPlayArrow, MdPause } from 'react-icons/md';
+import { IoContractOutline, IoExpandOutline } from 'react-icons/io5';
 import { CrateContext } from '../../store/CrateContext';
 import '../../styles/ui.css';
 
@@ -472,13 +474,16 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
               </button>
             </div>
           ) : (
-            <div 
+            <button type="button"
               className="slider-action-label"
+              aria-label={isPlaying && playDirection === -1 ? 'Pause disassembly' : 'Disassemble'}
+              title={isPlaying && playDirection === -1 ? 'Pause' : 'Disassemble'}
               onClick={isPlaying && playDirection === -1 ? handleSimplePause : handleDisassemble}
               style={{ cursor: 'pointer' }}
             >
-              {isPlaying && playDirection === -1 ? 'Pause' : 'Disassemble'}
-            </div>
+              <span className="slider-action-icon" aria-hidden="true">{isPlaying && playDirection === -1 ? <MdPause /> : <IoExpandOutline />}</span>
+              <span className="slider-action-text">{isPlaying && playDirection === -1 ? 'Pause' : 'Disassemble'}</span>
+            </button>
           )}
 
           {/* Slider and checkpoints */}
@@ -491,6 +496,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
           >
             <input
               id="progress-slider"
+              aria-label="Assembly progress"
               type="range"
               min="0"
               max="1"
@@ -588,7 +594,7 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
           </div>
 
           {/* Tooltip */}
-          {hoveredCheckpoint && (
+          {hoveredCheckpoint && createPortal(
             <div
               className="checkpoint-tooltip"
               style={{
@@ -614,20 +620,24 @@ export default function ProgressSlider({ motionList = [], hideAssemble = false }
               <div style={{ fontSize: '11px', color: '#FFB004' }}>
                 {getAssemblyInstruction(hoveredCheckpoint.partId)}
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* RIGHT SIDE: Simple mode = Assemble text, Advanced mode = percentage */}
           {advancedPlayerMode ? (
             <div className="slider-value">{Math.round(assemblyProgress * 100)}%</div>
           ) : (
-            <div 
+            <button type="button"
               className="slider-action-label"
+              aria-label={isPlaying && playDirection === 1 ? 'Pause assembly' : 'Assemble'}
+              title={isPlaying && playDirection === 1 ? 'Pause' : 'Assemble'}
               onClick={isPlaying && playDirection === 1 ? handleSimplePause : handleAssemble}
               style={{ cursor: 'pointer' }}
             >
-              {isPlaying && playDirection === 1 ? 'Pause' : 'Assemble'}
-            </div>
+              <span className="slider-action-icon" aria-hidden="true">{isPlaying && playDirection === 1 ? <MdPause /> : <IoContractOutline />}</span>
+              <span className="slider-action-text">{isPlaying && playDirection === 1 ? 'Pause' : 'Assemble'}</span>
+            </button>
           )}
         </div>
       </div>

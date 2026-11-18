@@ -1,29 +1,14 @@
 import React, { useContext } from 'react'
 import { CrateContext } from '../../store/CrateContext'
 import OptionCard from './OptionCard'
-import { IoChevronDown, IoChevronUp } from 'react-icons/io5'
+import CollapsiblePanel from './CollapsiblePanel'
 
 export default function OptionsList() {
   const { candidateCrates, selectedCandidateId, setSelectedCandidateId } = useContext(CrateContext)
-  const { assemblyProgress, setAssemblyProgress } = useContext(CrateContext)
-  const { collapsedCards, toggleCardCollapse } = useContext(CrateContext)
-  
-  const isCollapsed = collapsedCards.optionsList;
+  const { setAssemblyProgress } = useContext(CrateContext)
 
   return (
-    <div className='card' id="tutorial-candidates-panel">
-      <div
-        className='card-title collapsible-title'
-        onClick={() => toggleCardCollapse('optionsList')}
-        style={{ display: 'inline-flex', alignItems: 'center' }}
-      >
-        <span>Candidate Designs</span>
-        <span className='collapse-icon'>
-          {isCollapsed ? <IoChevronDown /> : <IoChevronUp />}
-        </span>
-      </div>
-      
-      {!isCollapsed && (
+    <CollapsiblePanel id="tutorial-candidates-panel" title="Candidate Designs" stateKey="optionsList">
         <div className='options-container'>
           {candidateCrates.map(opt => (
             <OptionCard
@@ -37,7 +22,6 @@ export default function OptionsList() {
             />
           ))}
         </div>
-      )}
-    </div>
+    </CollapsiblePanel>
   )
 }

@@ -6,6 +6,7 @@ import VisualizationOptions from './components/GUI/VisualizationOptions'
 import ComponentList from './components/GUI/ComponentList'
 import ProgressSlider from './components/GUI/ProgressSlider'
 import FloatingControls from './components/GUI/FloatingControls'
+import ResizableSidebar from './components/GUI/ResizableSidebar'
 import HelpButton from './components/GUI/HelpButton'
 import SceneGraphTester from './components/SceneGraphTester'
 import { DevThreeDView } from './components/NewThreeDView'
@@ -15,6 +16,7 @@ import { useSimpleSceneGraph } from './hooks/useSceneGraph'
 import { getUrlConfig } from './utils/urlConfig'
 import TutorialOverlay from './components/Tutorial/TutorialOverlay'
 import './App.css'
+import './styles/modern.css'
 
 export default function App() {
   // If embedded in an iframe on crative.com, attempt to steal parent URL parameters
@@ -74,13 +76,13 @@ export default function App() {
         <FloatingControls show={hideUI} hideAutoCamera={hideUI} />
       </div>
       {!hideUI && (
-        <div className='sidebar'>
+        <ResizableSidebar>
           {/* <LogoCard /> */}
           <InputForm />
           <OptionsList />
           <VisualizationOptions /> 
           <ComponentList />
-        </div>
+        </ResizableSidebar>
       )}
     </div>
   )
